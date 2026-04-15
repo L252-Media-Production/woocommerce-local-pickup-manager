@@ -207,10 +207,61 @@ class WCLPM_Fields {
                     </div>
 
                 </div>
+
+                <!-- Alternate Pickup Person -->
+                <div id="alternate-pickup-section" style="border-top:1px solid #e5e5e5;margin-top:20px;padding-top:20px;">
+                    <h4 style="margin:0 0 12px;font-size:14px;font-weight:600;">Alternate Pickup Person</h4>
+                    <p class="form-row form-row-wide" style="margin-bottom:10px;">
+                        <label for="has_alternate_pickup" style="display:block;margin-bottom:5px;">
+                            Would you like to designate an alternate pickup person?
+                        </label>
+                        <select name="has_alternate_pickup" id="has_alternate_pickup" class="select input-text" style="width:100%;padding:8px;">
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
+                        </select>
+                    </p>
+                    <div id="alternate-pickup-fields" style="display:none;">
+                        <p class="form-row form-row-wide" style="margin-bottom:10px;">
+                            <label for="alternate_pickup_name" style="display:block;margin-bottom:5px;">
+                                Full Name <span class="required">*</span>
+                            </label>
+                            <input type="text" name="alternate_pickup_name" id="alternate_pickup_name"
+                                   class="input-text" style="width:100%;padding:8px;box-sizing:border-box;"
+                                   placeholder="Full name">
+                        </p>
+                        <p class="form-row form-row-first" style="margin-bottom:10px;">
+                            <label for="alternate_pickup_phone" style="display:block;margin-bottom:5px;">
+                                Phone Number <span class="required">*</span>
+                            </label>
+                            <input type="tel" name="alternate_pickup_phone" id="alternate_pickup_phone"
+                                   class="input-text" style="width:100%;padding:8px;box-sizing:border-box;"
+                                   placeholder="Phone number">
+                        </p>
+                        <p class="form-row form-row-last" style="margin-bottom:0;">
+                            <label for="alternate_pickup_email" style="display:block;margin-bottom:5px;">
+                                Email Address <span class="required">*</span>
+                            </label>
+                            <input type="email" name="alternate_pickup_email" id="alternate_pickup_email"
+                                   class="input-text" style="width:100%;padding:8px;box-sizing:border-box;"
+                                   placeholder="Email address">
+                        </p>
+                    </div>
+                </div>
+
             </div>
         </div>
+        <script>
+        jQuery(function($) {
+            $('#has_alternate_pickup').on('change', function() {
+                if ( $(this).val() === 'yes' ) {
+                    $('#alternate-pickup-fields').slideDown(200);
+                } else {
+                    $('#alternate-pickup-fields').slideUp(200);
+                }
+            });
+        });
+        </script>
         <?php
         // The interactive JS is in assets/js/pickup-checkout.js (enqueued above).
-        // The <script> block from the original snippet is moved there verbatim.
     }
 }

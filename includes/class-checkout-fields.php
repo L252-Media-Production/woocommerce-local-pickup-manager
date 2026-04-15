@@ -5,13 +5,73 @@ defined( 'ABSPATH' ) || exit;
 
 class WCLPM_Shipping {
     public function __construct() {
-        // Re-enable legacy local pickup for classic shortcode checkout
-        add_filter( 'woocommerce_shipping_methods', [ $this, 'enable_legacy_pickup' ] );
+        add_filter( 'woocommerce_shipping_methods', [ $this, 'register_method' ] );
+        add_filter( 'woocommerce_package_rates',    [ $this, 'suppress_blocks_pickup' ], 20, 2 );
     }
 
-    public function enable_legacy_pickup( $methods ) {
-        $methods['legacy_local_pickup'] = 'WC_Shipping_Local_Pickup';
+    public function register_method( $methods ) {
+        $methods['wclpm_local_pickup'] = 'WCLPM_Local_Pickup_Method';
         return $methods;
+    }
+
+    /**
+     * Remove WooCommerce's blocks-based local pickup rates (pickup_location:*)
+     * whenever our zone-based method (wclpm_local_pickup:*) is also in the package.
+     */
+    public function suppress_blocks_pickup( $rates, $package ) {
+        $has_wclpm = false;
+        foreach ( $rates as $rate_id => $rate ) {
+            if ( strpos( $rate_id, 'wclpm_local_pickup' ) !== false ) {
+                $has_wclpm = true;
+                break;
+            }
+        }
+
+        if ( ! $has_wclpm ) {
+            return $rates;
+        }
+
+        foreach ( $rates as $rate_id => $rate ) {
+            if ( strpos( $rate_id, 'pickup_location' ) !== false ) {
+                unset( $rates[ $rate_id ] );
+            }
+        }
+
+        return $rates;
+    }
+}
+
+class WCLPM_Local_Pickup_Method extends WC_Shipping_Method {
+
+    public function __construct( $instance_id = 0 ) {
+        $this->id                 = 'wclpm_local_pickup';
+        $this->instance_id        = absint( $instance_id );
+        $this->method_title       = 'Local Pickup';
+        $this->method_description = 'Allow customers to pick up orders at your location. Managed by Local Pickup Manager.';
+        $this->supports           = [ 'shipping-zones', 'instance-settings' ];
+        $this->init();
+    }
+
+    private function init() {
+        $this->instance_form_fields = [
+            'title' => [
+                'title'       => 'Method title',
+                'type'        => 'text',
+                'default'     => 'Local pickup',
+                'desc_tip'    => true,
+                'description' => 'Label shown to the customer at checkout.',
+            ],
+        ];
+        $this->title = $this->get_option( 'title', 'Local pickup' );
+        add_action( 'woocommerce_update_options_shipping_' . $this->id, [ $this, 'process_admin_options' ] );
+    }
+
+    public function calculate_shipping( $package = [] ) {
+        $this->add_rate( [
+            'id'    => $this->get_rate_id(),
+            'label' => $this->title,
+            'cost'  => 0,
+        ] );
     }
 }
 
@@ -174,13 +234,14 @@ class WCLPM_Checkout_Fields {
     }
 
     public function render_fields() {
-        $groups          = $this->get_crm_groups();
-        $group_label     = WCLPM_Settings::get( 'crm_group_label', 'Organization Affiliation' );
-        $is_local_pickup = $this->is_local_pickup();
+        $groups      = $this->get_crm_groups();
+        $group_label = WCLPM_Settings::get( 'crm_group_label', 'Organization Affiliation' );
+
+        if ( empty( $groups ) ) {
+            return;
+        }
         ?>
         <div id="custom-checkout-fields" style="margin-bottom:30px;">
-
-            <?php if ( ! empty( $groups ) ) : ?>
             <div class="woocommerce-billing-fields">
                 <h3><?php echo esc_html( $group_label ); ?></h3>
                 <p class="form-row form-row-wide" id="church_affiliation_field">
@@ -196,56 +257,7 @@ class WCLPM_Checkout_Fields {
                     </select>
                 </p>
             </div>
-            <?php endif; ?>
-
-            <div id="alternate-pickup-wrapper" class="woocommerce-billing-fields"
-                 style="<?php echo $is_local_pickup ? '' : 'display:none;'; ?>">
-                <h3>Alternate Pickup Person</h3>
-                <p class="form-row form-row-wide">
-                    <label for="has_alternate_pickup">Would you like to designate an alternate pickup person?</label>
-                    <select name="has_alternate_pickup" id="has_alternate_pickup" class="select input-text" style="width:100%;padding:8px;">
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                    </select>
-                </p>
-                <div id="alternate-pickup-fields" style="display:none;">
-                    <p class="form-row form-row-wide">
-                        <label for="alternate_pickup_name">Full Name <span class="required">*</span></label>
-                        <input type="text" name="alternate_pickup_name" id="alternate_pickup_name" class="input-text" style="width:100%;padding:8px;" placeholder="Full name">
-                    </p>
-                    <p class="form-row form-row-first">
-                        <label for="alternate_pickup_phone">Phone Number <span class="required">*</span></label>
-                        <input type="tel" name="alternate_pickup_phone" id="alternate_pickup_phone" class="input-text" style="width:100%;padding:8px;" placeholder="Phone number">
-                    </p>
-                    <p class="form-row form-row-last">
-                        <label for="alternate_pickup_email">Email Address <span class="required">*</span></label>
-                        <input type="email" name="alternate_pickup_email" id="alternate_pickup_email" class="input-text" style="width:100%;padding:8px;" placeholder="Email address">
-                    </p>
-                </div>
-            </div>
-
         </div>
-        <script>
-        jQuery(function($) {
-            $('#has_alternate_pickup').on('change', function() {
-                if ( $(this).val() === 'yes' ) {
-                    $('#alternate-pickup-fields').slideDown(200);
-                } else {
-                    $('#alternate-pickup-fields').slideUp(200);
-                }
-            });
-
-            $(document.body).on('updated_checkout', function() {
-                var chosen = $('input[name="shipping_method[0]"]:checked').val()
-                          || $('input[name="shipping_method[0]"]').val() || '';
-                if ( chosen.indexOf('local_pickup') !== -1 ) {
-                    $('#alternate-pickup-wrapper').slideDown(200);
-                } else {
-                    $('#alternate-pickup-wrapper').slideUp(200);
-                }
-            });
-        });
-        </script>
         <?php
     }
 
