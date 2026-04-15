@@ -11,4 +11,4 @@ WooCommerce Local Pickup Manager adds a full-featured pickup scheduling system o
 * Prevents mixed carts (pickup-only products can't be combined with shippable products)
 * Admin settings panel under WooCommerce for email, timing, slot capacity, booking window, and change request cutoffs
 
-**Requirements**: WordPress 6.0+, WooCommerce 7.0+, ACF Pro, PHP 7.4+
+**Requirements**: WordPress 6.0+, WooCommerce 7.0+, ACF Pro, Elementor Pro, PHP 7.4+
