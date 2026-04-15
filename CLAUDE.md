@@ -26,8 +26,8 @@ infrastructure (LICENSE, README, uninstall.php) and optional quality-of-life imp
 - [x] All `wclpm_` prefixes, `WCLPM_*` class names, `WCLPM_*` constants in place
 - [x] Hard WooCommerce activation check (deactivates + `wp_die` if WC missing)
 - [x] ACF fields registered programmatically via `WCLPM_ACF_Fields`
-- [ ] Add `LICENSE` file (GPL-2.0)
-- [ ] Write `README.md`
+- [x] Add `LICENSE` file (GPL-2.0)
+- [x] Write `README.md`
 - [ ] Add `uninstall.php` to drop DB table and options on plugin deletion
 
 ---
