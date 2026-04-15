@@ -20,6 +20,36 @@ Advanced local pickup scheduling for WooCommerce. Instead of a plain "local pick
 
 ---
 
+## Screenshots
+
+### Checkout
+
+![Checkout — full Pickup Details panel with location selector, calendar, time picker, and alternate pickup toggle](screenshots/screenshot-1.png)
+
+![Checkout — calendar with available dates highlighted and time slot dropdown showing remaining spots](screenshots/screenshot-2.png)
+
+![Checkout — Alternate Pickup Person section expanded with name, phone, and email fields](screenshots/screenshot-3.png)
+
+### Pickup Locations
+
+![Pickup Location admin — address, slot capacity, lead time, and Default Weekly Hours](screenshots/screenshot-5.png)
+
+![Pickup Location admin — Specific Date Schedule overrides and Closed Dates with reason field](screenshots/screenshot-6.png)
+
+### Product Settings
+
+![Product admin — Pickup Settings: Pickup Only toggle, location assignment, and booking window](screenshots/screenshot-4.png)
+
+### Plugin Settings
+
+![Pickup Manager Settings — Email Sender, Subject Line templates, and Reminder Timing](screenshots/screenshot-7.png)
+
+![Pickup Manager Settings — Slot Availability: default capacity and booking window](screenshots/screenshot-8.png)
+
+![Pickup Manager Settings — Change Requests, Email Branding, and CRM Integration](screenshots/screenshot-9.png)
+
+---
+
 ## Requirements
 
 | Dependency | Required | Notes |

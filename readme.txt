@@ -78,13 +78,15 @@ The plugin registers its own shipping method for use in shipping zones and autom
 
 == Screenshots ==
 
-1. Checkout — location selector, availability calendar, and time slot picker
-2. Checkout — alternate pickup person fields within the Pickup Details section
-3. Pickup Location admin — weekly schedule and specific date override configuration
-4. Product admin — Pickup Only toggle, location assignment, and availability window
-5. WooCommerce → Pickup Manager settings page
-6. Admin order view — pickup details and alternate pickup person
-7. Change Requests review page under WooCommerce
+1. Checkout — full Pickup Details panel showing location selector, availability calendar, time slot picker, and Alternate Pickup Person toggle
+2. Checkout — calendar with available dates highlighted and time slot dropdown open showing remaining spots per slot
+3. Checkout — Alternate Pickup Person section expanded with full name, phone number, and email address fields
+4. Product admin — Pickup Settings meta box: Pickup Only toggle, available location assignment, and pickup booking window dates
+5. Pickup Location admin — basic settings (address, capacity, lead time) and Default Weekly Hours repeater
+6. Pickup Location admin — Specific Date Schedule overrides and Closed Dates with optional reason field
+7. Pickup Manager Settings — Email Sender, Email Subject Lines with token reference, and Reminder Timing
+8. Pickup Manager Settings — Slot Availability (default capacity and booking window)
+9. Pickup Manager Settings — Change Requests cutoff, Email Branding (logo and store address), and CRM Integration
 
 == Changelog ==
 
