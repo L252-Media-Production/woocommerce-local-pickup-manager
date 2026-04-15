@@ -26,6 +26,15 @@ define( 'WCLPM_URL',         plugin_dir_url( __FILE__ ) );
 
 register_activation_hook( __FILE__, 'wclpm_activate' );
 function wclpm_activate() {
+    if ( ! class_exists( 'WooCommerce' ) ) {
+        deactivate_plugins( plugin_basename( WCLPM_PLUGIN_FILE ) );
+        wp_die(
+            '<strong>WooCommerce Local Pickup Manager</strong> requires WooCommerce to be installed and active. Please install WooCommerce first.',
+            'Plugin Activation Error',
+            [ 'back_link' => true ]
+        );
+    }
+
     require_once WCLPM_PATH . 'includes/class-database.php';
     require_once WCLPM_PATH . 'includes/class-settings.php';
     require_once WCLPM_PATH . 'includes/class-order-confirmation.php'; // contains Reminders
@@ -65,6 +74,7 @@ function wclpm_boot() {
         'includes/class-ajax-slots.php',        // WCLPM_Ajax_Slots, WCLPM_Order_Meta
         'includes/class-order-confirmation.php',// WCLPM_Order_Confirmation, WCLPM_Reminders,
                                                 // WCLPM_Availability, WCLPM_Change_Requests
+        'includes/class-acf-fields.php',        // WCLPM_ACF_Fields
         'includes/class-admin.php',             // WCLPM_Admin
     ];
 
@@ -88,6 +98,8 @@ function wclpm_boot() {
     new WCLPM_Reminders();
     new WCLPM_Availability();
     new WCLPM_Change_Requests();
+
+    new WCLPM_ACF_Fields();
 
     if ( is_admin() ) {
         new WCLPM_Admin();
