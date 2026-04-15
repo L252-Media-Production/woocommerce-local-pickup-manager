@@ -111,37 +111,27 @@ class WCLPM_Checkout_Fields {
         add_action( 'init', [ $this, 'clear_church_cache_on_request' ] );
     }
 
-    public function get_espocrm_churches() {
-        $cache_key = 'espocrm_churches';
+    public function get_crm_groups() {
+        $api_url = WCLPM_Settings::get( 'crm_api_url', '' );
+        if ( empty( $api_url ) ) {
+            return [];
+        }
+
+        $cache_key = 'wclpm_crm_groups';
         $cached    = get_transient( $cache_key );
         if ( $cached !== false ) {
             return $cached;
         }
 
-        $api_key = defined( 'ESPOCRM_API_KEY' ) ? ESPOCRM_API_KEY : '';
-        if ( empty( $api_key ) ) {
-            return [];
+        $headers = [ 'Accept' => 'application/json' ];
+        $api_key = WCLPM_Settings::get( 'crm_api_key', '' );
+        if ( ! empty( $api_key ) ) {
+            $headers['X-Api-Key'] = $api_key;
         }
 
-        $url = 'https://crm.gnycyouth.org/api/v1/Account?' . http_build_query([
-            'searchParams' => json_encode([
-                'where' => [[
-                    'type'  => 'or',
-                    'value' => [
-                        [ 'type' => 'equals', 'attribute' => 'type', 'value' => 'Church' ],
-                        [ 'type' => 'equals', 'attribute' => 'type', 'value' => 'Company' ],
-                        [ 'type' => 'equals', 'attribute' => 'type', 'value' => 'Group' ],
-                    ],
-                ]],
-                'select'  => [ 'id', 'name', 'type' ],
-                'orderBy' => 'name',
-                'order'   => 'asc',
-            ]),
-        ]);
-
-        $response = wp_remote_get( $url, [
+        $response = wp_remote_get( $api_url, [
             'timeout' => 15,
-            'headers' => [ 'X-Api-Key' => $api_key ],
+            'headers' => $headers,
         ]);
 
         if ( is_wp_error( $response ) ) {
@@ -152,17 +142,19 @@ class WCLPM_Checkout_Fields {
         }
 
         $body = json_decode( wp_remote_retrieve_body( $response ), true );
-        if ( empty( $body['list'] ) ) {
+        if ( empty( $body['list'] ) || ! is_array( $body['list'] ) ) {
             return [];
         }
 
-        $churches = [];
-        foreach ( $body['list'] as $church ) {
-            $churches[] = [ 'id' => $church['id'], 'name' => $church['name'] ];
+        $groups = [];
+        foreach ( $body['list'] as $item ) {
+            if ( isset( $item['id'], $item['name'] ) ) {
+                $groups[] = [ 'id' => $item['id'], 'name' => $item['name'] ];
+            }
         }
 
-        set_transient( $cache_key, $churches, DAY_IN_SECONDS );
-        return $churches;
+        set_transient( $cache_key, $groups, DAY_IN_SECONDS );
+        return $groups;
     }
 
     private function is_local_pickup() {
@@ -182,22 +174,23 @@ class WCLPM_Checkout_Fields {
     }
 
     public function render_fields() {
-        $churches        = $this->get_espocrm_churches();
+        $groups          = $this->get_crm_groups();
+        $group_label     = WCLPM_Settings::get( 'crm_group_label', 'Organization Affiliation' );
         $is_local_pickup = $this->is_local_pickup();
         ?>
         <div id="custom-checkout-fields" style="margin-bottom:30px;">
 
-            <?php if ( ! empty( $churches ) ) : ?>
+            <?php if ( ! empty( $groups ) ) : ?>
             <div class="woocommerce-billing-fields">
-                <h3>Church Information</h3>
+                <h3><?php echo esc_html( $group_label ); ?></h3>
                 <p class="form-row form-row-wide" id="church_affiliation_field">
-                    <label for="church_affiliation">Church Affiliation <span class="required">*</span></label>
+                    <label for="church_affiliation"><?php echo esc_html( $group_label ); ?> <span class="required">*</span></label>
                     <select name="church_affiliation_id" id="church_affiliation" class="select input-text" style="width:100%;padding:8px;">
-                        <option value="">— Select your church —</option>
-                        <?php foreach ( $churches as $church ) : ?>
-                        <option value="<?php echo esc_attr( $church['id'] ); ?>"
-                                data-name="<?php echo esc_attr( $church['name'] ); ?>">
-                            <?php echo esc_html( $church['name'] ); ?>
+                        <option value="">— Select an option —</option>
+                        <?php foreach ( $groups as $group ) : ?>
+                        <option value="<?php echo esc_attr( $group['id'] ); ?>"
+                                data-name="<?php echo esc_attr( $group['name'] ); ?>">
+                            <?php echo esc_html( $group['name'] ); ?>
                         </option>
                         <?php endforeach; ?>
                     </select>
@@ -260,9 +253,9 @@ class WCLPM_Checkout_Fields {
         if ( ! empty( $_POST['church_affiliation_id'] ) ) {
             $church_id   = sanitize_text_field( $_POST['church_affiliation_id'] );
             $church_name = '';
-            foreach ( $this->get_espocrm_churches() as $church ) {
-                if ( $church['id'] === $church_id ) {
-                    $church_name = $church['name'];
+            foreach ( $this->get_crm_groups() as $group ) {
+                if ( $group['id'] === $church_id ) {
+                    $church_name = $group['name'];
                     break;
                 }
             }
@@ -398,9 +391,9 @@ class WCLPM_Checkout_Fields {
     }
 
     public function clear_church_cache_on_request() {
-        if ( isset( $_GET['clear_church_cache'] ) && current_user_can( 'manage_options' ) ) {
-            delete_transient( 'espocrm_churches' );
-            wp_die( 'Church cache cleared. It will be refreshed on the next checkout visit.' );
+        if ( isset( $_GET['clear_crm_cache'] ) && current_user_can( 'manage_options' ) ) {
+            delete_transient( 'wclpm_crm_groups' );
+            wp_die( 'CRM group cache cleared. It will be refreshed on the next checkout visit.' );
         }
     }
 }

@@ -308,6 +308,34 @@ class WCLPM_Reminders {
         ];
     }
 
+    private static function get_logo_img_tag() {
+        $url = WCLPM_Settings::get( 'logo_url', '' );
+
+        if ( empty( $url ) ) {
+            $logo_id = get_theme_mod( 'custom_logo' );
+            if ( $logo_id ) {
+                $url = wp_get_attachment_image_url( $logo_id, 'medium' );
+            }
+        }
+
+        if ( empty( $url ) ) {
+            return '';
+        }
+
+        return '<img src="' . esc_url( $url ) . '" alt="' . esc_attr( get_bloginfo( 'name' ) ) . '" style="max-height:50px;margin-bottom:16px;">';
+    }
+
+    private static function get_footer_address_html() {
+        $address = WCLPM_Settings::get( 'store_address', '' );
+        $name    = esc_html( get_bloginfo( 'name' ) );
+
+        if ( ! empty( $address ) ) {
+            return '<p style="margin:0;font-size:12px;color:#888;">' . $name . '<br>' . esc_html( $address ) . '</p>';
+        }
+
+        return '<p style="margin:0;font-size:12px;color:#888;">' . $name . '</p>';
+    }
+
     private function build_email( $booking, $order_details, $is_morning ) {
         $settings         = WCLPM_Settings::get_all();
         $location_name    = get_the_title( $booking->location_id );
@@ -368,7 +396,7 @@ class WCLPM_Reminders {
     <tr><td align="center" style="padding:0 12px;">
         <table width="640" cellpadding="0" cellspacing="0" border="0" class="email-inner" style="max-width:640px;width:100%;">
             <tr><td class="email-header" style="background:#1a1a2e;border-radius:8px 8px 0 0;padding:28px 36px;text-align:center;">
-                <img src="https://cdn.gnycyouth.org/wp-content/uploads/2026/03/11033656/logo.png" alt="' . esc_attr( get_bloginfo( 'name' ) ) . '" style="max-height:50px;margin-bottom:16px;">
+' . self::get_logo_img_tag() . '
                 <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">' . esc_html( $heading_text ) . '</h1>
             </td></tr>
             <tr><td class="email-body" style="background:#fff;padding:28px 36px;">
@@ -410,7 +438,7 @@ class WCLPM_Reminders {
             </td></tr>
             <tr><td class="email-footer" style="background:#f8f8f8;border:1px solid #e5e5e5;border-top:none;border-radius:0 0 8px 8px;padding:24px 36px;text-align:center;">
                 <p style="margin:0 0 8px;font-size:13px;color:#555;">Questions? Contact us at <a href="mailto:' . esc_attr( $settings['from_email'] ) . '" style="color:#1a1a2e;font-weight:bold;">' . esc_html( $settings['from_email'] ) . '</a></p>
-                <p style="margin:0;font-size:12px;color:#888;">' . esc_html( get_bloginfo( 'name' ) ) . '<br>7 Shelter Rock Rd, Manhasset, NY 11030</p>
+' . self::get_footer_address_html() . '
             </td></tr>
         </table>
     </td></tr>

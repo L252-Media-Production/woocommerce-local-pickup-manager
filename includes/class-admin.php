@@ -217,6 +217,72 @@ class WCLPM_Admin {
                     </tr>
                 </table>
 
+                <!-- ── Email Branding ─────────────────────────────── -->
+                <div class="wclpm-section-heading">🖼️ Email Branding</div>
+                <table class="wclpm-settings-table">
+                    <tr>
+                        <th><label for="logo_url">Logo URL</label></th>
+                        <td>
+                            <input type="url" id="logo_url" name="logo_url"
+                                   value="<?php echo esc_attr( $s['logo_url'] ); ?>"
+                                   placeholder="https://…">
+                            <p class="wclpm-settings-desc">
+                                Shown at the top of reminder emails. Leave blank to use your site logo
+                                (Appearance → Customize → Site Identity), or omit entirely.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="store_address">Store Address</label></th>
+                        <td>
+                            <input type="text" id="store_address" name="store_address"
+                                   value="<?php echo esc_attr( $s['store_address'] ); ?>"
+                                   placeholder="123 Main St, City, State 00000">
+                            <p class="wclpm-settings-desc">Shown in the email footer. Leave blank to omit.</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- ── CRM Integration ───────────────────────────── -->
+                <div class="wclpm-section-heading">🔗 CRM Integration (optional)</div>
+                <p style="max-width:760px;color:#555;font-size:13px;margin:8px 0 12px;">
+                    Populates an affiliation dropdown at checkout from any CRM API.
+                    Leave <strong>API URL</strong> blank to disable the feature entirely.
+                    The API must return JSON in the format <code>{"list":[{"id":"…","name":"…"}]}</code>.
+                </p>
+                <table class="wclpm-settings-table">
+                    <tr>
+                        <th><label for="crm_api_url">API URL</label></th>
+                        <td>
+                            <input type="url" id="crm_api_url" name="crm_api_url"
+                                   value="<?php echo esc_attr( $s['crm_api_url'] ); ?>"
+                                   placeholder="https://your-crm.example.com/api/v1/groups">
+                            <p class="wclpm-settings-desc">
+                                Full URL including any query parameters you need.
+                                Results are cached for 24 hours.
+                                <a href="<?php echo esc_url( add_query_arg( 'clear_crm_cache', '1' ) ); ?>">Clear cache now</a>.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="crm_api_key">API Key</label></th>
+                        <td>
+                            <input type="text" id="crm_api_key" name="crm_api_key"
+                                   value="<?php echo esc_attr( $s['crm_api_key'] ); ?>"
+                                   autocomplete="off">
+                            <p class="wclpm-settings-desc">Sent as the <code>X-Api-Key</code> header. Leave blank if your endpoint needs no authentication.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="crm_group_label">Field Label</label></th>
+                        <td>
+                            <input type="text" id="crm_group_label" name="crm_group_label"
+                                   value="<?php echo esc_attr( $s['crm_group_label'] ); ?>">
+                            <p class="wclpm-settings-desc">Label shown above the dropdown at checkout (e.g. "Church Affiliation", "Organization").</p>
+                        </td>
+                    </tr>
+                </table>
+
                 <p style="margin-top:24px;">
                     <input type="submit" name="wclpm_save_settings"
                            class="button button-primary button-large"
