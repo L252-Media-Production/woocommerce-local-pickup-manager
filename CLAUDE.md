@@ -203,3 +203,4 @@ Both use a transient lock to prevent duplicate sends on concurrent runs.
 - No unit tests
 - No `uninstall.php` to clean up DB table and options on plugin deletion
 - Move `Alternate Pickup Person` to `Pickup Details` to avoid confusion
+- Move `Alternate Pickup Person` to `Pickup Details` to avoid confusion
