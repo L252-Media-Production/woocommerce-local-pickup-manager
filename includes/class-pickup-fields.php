@@ -41,7 +41,7 @@ class WCLPM_Fields {
 
         foreach ( WC()->cart->get_cart() as $cart_key => $cart_item ) {
             $product_id = $cart_item['product_id'];
-            $locations  = get_field( 'available_pickup_locations', $product_id );
+            $locations  = wclpm_get_field( 'available_pickup_locations', $product_id );
 
             if ( empty( $locations ) ) {
                 continue;
@@ -52,7 +52,7 @@ class WCLPM_Fields {
                 $location_options[] = [
                     'id'      => $location->ID,
                     'name'    => $location->post_title,
-                    'address' => get_field( 'location_address', $location->ID ),
+                    'address' => wclpm_get_field( 'location_address', $location->ID ),
                 ];
             }
 
@@ -116,8 +116,8 @@ class WCLPM_Fields {
 
         foreach ( $items as $item ) {
             $product_id    = $item['product_id'];
-            $product_start = get_field( 'pickup_start_date', $product_id );
-            $product_end   = get_field( 'pickup_end_date', $product_id );
+            $product_start = wclpm_get_field( 'pickup_start_date', $product_id );
+            $product_end   = wclpm_get_field( 'pickup_end_date', $product_id );
 
             if ( $product_start ) {
                 $start_dt = DateTime::createFromFormat( 'Ymd', $product_start );

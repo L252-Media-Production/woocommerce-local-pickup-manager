@@ -74,6 +74,7 @@ function wclpm_boot() {
         'includes/class-ajax-slots.php',        // WCLPM_Ajax_Slots, WCLPM_Order_Meta
         'includes/class-order-confirmation.php',// WCLPM_Order_Confirmation, WCLPM_Reminders,
                                                 // WCLPM_Availability, WCLPM_Change_Requests
+        'includes/class-meta-boxes.php',         // wclpm_get_field() shim + WCLPM_Meta_Boxes
         'includes/class-acf-fields.php',        // WCLPM_ACF_Fields
         'includes/class-admin.php',             // WCLPM_Admin
     ];
@@ -99,6 +100,7 @@ function wclpm_boot() {
     new WCLPM_Availability();
     new WCLPM_Change_Requests();
 
+    new WCLPM_Meta_Boxes();
     new WCLPM_ACF_Fields();
 
     if ( is_admin() ) {

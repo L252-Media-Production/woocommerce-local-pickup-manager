@@ -27,10 +27,10 @@ class WCLPM_Ajax_Slots {
             wp_send_json_error( 'Missing location' );
         }
 
-        $schedule      = get_field( 'pickup_schedule', $location_id );
-        $default_hours = get_field( 'default_weekly_hours', $location_id );
-        $closed_dates  = get_field( 'closed_dates', $location_id );
-        $lead_time     = intval( get_field( 'lead_time_hours', $location_id ) ?: 24 );
+        $schedule      = wclpm_get_field( 'pickup_schedule', $location_id );
+        $default_hours = wclpm_get_field( 'default_weekly_hours', $location_id );
+        $closed_dates  = wclpm_get_field( 'closed_dates', $location_id );
+        $lead_time     = intval( wclpm_get_field( 'lead_time_hours', $location_id ) ?: 24 );
         $timezone      = new DateTimeZone( wp_timezone_string() );
         $now           = new DateTime( 'now', $timezone );
         $today         = new DateTime( 'today', $timezone );
@@ -138,7 +138,7 @@ class WCLPM_Ajax_Slots {
 
     /**
      * Return available time slots for a location + date.
-     * Respects capacity from ACF, with admin default as fallback.
+     * Respects per-location capacity override, with admin default as fallback.
      */
     public function get_slots_handler() {
         check_ajax_referer( 'pickup_nonce', 'nonce' );
@@ -150,15 +150,15 @@ class WCLPM_Ajax_Slots {
             wp_send_json_error( 'Missing parameters' );
         }
 
-        $acf_capacity  = get_field( 'location_capacity', $location_id );
-        $capacity      = $acf_capacity
-            ? intval( $acf_capacity )
+        $per_loc_capacity = wclpm_get_field( 'location_capacity', $location_id );
+        $capacity         = $per_loc_capacity
+            ? intval( $per_loc_capacity )
             : intval( WCLPM_Settings::get( 'default_slot_capacity', 5 ) );
 
-        $schedule      = get_field( 'pickup_schedule', $location_id );
-        $default_hours = get_field( 'default_weekly_hours', $location_id );
-        $closed_dates  = get_field( 'closed_dates', $location_id );
-        $lead_time     = intval( get_field( 'lead_time_hours', $location_id ) ?: 24 );
+        $schedule      = wclpm_get_field( 'pickup_schedule', $location_id );
+        $default_hours = wclpm_get_field( 'default_weekly_hours', $location_id );
+        $closed_dates  = wclpm_get_field( 'closed_dates', $location_id );
+        $lead_time     = intval( wclpm_get_field( 'lead_time_hours', $location_id ) ?: 24 );
         $timezone      = new DateTimeZone( wp_timezone_string() );
         $now           = new DateTime( 'now', $timezone );
         $today         = new DateTime( 'today', $timezone );
@@ -406,7 +406,7 @@ class WCLPM_Order_Meta {
         }
 
         $location_name    = get_the_title( $location_id );
-        $location_address = get_field( 'location_address', $location_id );
+        $location_address = wclpm_get_field( 'location_address', $location_id );
         $date_obj         = DateTime::createFromFormat( 'Ymd', $date );
         $date_display     = $date_obj ? $date_obj->format( 'l, F j, Y' ) : $date;
         $time_obj         = DateTime::createFromFormat( 'H:i', $time );

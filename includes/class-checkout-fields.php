@@ -87,7 +87,7 @@ class WCLPM_Cart {
     public function enforce_pickup_only_shipping( $rates, $package ) {
         $has_pickup_only = false;
         foreach ( $package['contents'] as $cart_item ) {
-            if ( get_field( 'pickup_only', $cart_item['product_id'] ) ) {
+            if ( wclpm_get_field( 'pickup_only', $cart_item['product_id'] ) ) {
                 $has_pickup_only = true;
                 break;
             }
@@ -111,7 +111,7 @@ class WCLPM_Cart {
 
     public function pickup_only_cart_notice() {
         foreach ( WC()->cart->get_cart() as $cart_item ) {
-            if ( get_field( 'pickup_only', $cart_item['product_id'] ) ) {
+            if ( wclpm_get_field( 'pickup_only', $cart_item['product_id'] ) ) {
                 wc_add_notice(
                     'Your cart contains a pickup-only item. Only local pickup is available for this order.',
                     'notice'
@@ -126,12 +126,12 @@ class WCLPM_Cart {
             return $passed;
         }
 
-        $adding_pickup_only   = get_field( 'pickup_only', $product_id );
+        $adding_pickup_only   = wclpm_get_field( 'pickup_only', $product_id );
         $cart_has_pickup_only = false;
         $cart_has_regular     = false;
 
         foreach ( WC()->cart->get_cart() as $cart_item ) {
-            if ( get_field( 'pickup_only', $cart_item['product_id'] ) ) {
+            if ( wclpm_get_field( 'pickup_only', $cart_item['product_id'] ) ) {
                 $cart_has_pickup_only = true;
             } else {
                 $cart_has_regular = true;

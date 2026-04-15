@@ -339,7 +339,7 @@ class WCLPM_Reminders {
     private function build_email( $booking, $order_details, $is_morning ) {
         $settings         = WCLPM_Settings::get_all();
         $location_name    = get_the_title( $booking->location_id );
-        $location_address = get_field( 'location_address', $booking->location_id );
+        $location_address = wclpm_get_field( 'location_address', $booking->location_id );
         $date_obj         = DateTime::createFromFormat( 'Y-m-d', $booking->pickup_date );
         $date_display     = $date_obj ? $date_obj->format( 'l, F j, Y' ) : $booking->pickup_date;
         $time_obj         = DateTime::createFromFormat( 'H:i', $booking->pickup_time );
@@ -455,15 +455,20 @@ class WCLPM_Availability {
 
     public function __construct() {
         add_action( 'woocommerce_single_product_summary', [ $this, 'block_add_to_cart_standard' ], 25 );
-        add_action( 'wp_footer',                          [ $this, 'block_elementor_add_to_cart' ] );
         add_filter( 'woocommerce_is_purchasable',         [ $this, 'is_purchasable' ], 10, 2 );
         add_filter( 'woocommerce_add_to_cart_validation', [ $this, 'validate_add_to_cart' ], 10, 2 );
+
+        // Elementor Pro enhancement — hides the add-to-cart widget when out of season.
+        // Only registered when Elementor Pro is active; the standard hook above handles all other themes.
+        if ( defined( 'ELEMENTOR_PRO_VERSION' ) ) {
+            add_action( 'wp_footer', [ $this, 'block_elementor_add_to_cart' ] );
+        }
     }
 
     public static function in_season( $product_id ) {
-        $start   = get_field( 'availability_start_date', $product_id );
-        $end     = get_field( 'availability_end_date', $product_id );
-        $expires = get_field( 'expires_after_end_date', $product_id );
+        $start   = wclpm_get_field( 'availability_start_date', $product_id );
+        $end     = wclpm_get_field( 'availability_end_date', $product_id );
+        $expires = wclpm_get_field( 'expires_after_end_date', $product_id );
 
         if ( ! $start ) {
             return true;
@@ -508,9 +513,9 @@ class WCLPM_Availability {
     }
 
     private function get_seasonal_message( $product_id ) {
-        $expires = get_field( 'expires_after_end_date', $product_id );
-        $end     = get_field( 'availability_end_date', $product_id );
-        $start   = get_field( 'availability_start_date', $product_id );
+        $expires = wclpm_get_field( 'expires_after_end_date', $product_id );
+        $end     = wclpm_get_field( 'availability_end_date', $product_id );
+        $start   = wclpm_get_field( 'availability_start_date', $product_id );
 
         if ( $expires ) {
             $d = DateTime::createFromFormat( 'Y-m-d H:i:s', $end, new DateTimeZone( wp_timezone_string() ) );
