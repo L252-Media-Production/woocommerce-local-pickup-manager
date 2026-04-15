@@ -30,7 +30,7 @@ class WCLPM_Settings {
 
             // Email branding
             'logo_url'                => '',   // Falls back to WP site logo; leave blank to omit
-            'store_address'           => '',   // Shown in email footer; leave blank to omit
+            'store_address'           => self::get_wc_store_address(), // Falls back to WC store address; leave blank to omit
 
             // Reminder timing
             'reminder_send_time'      => '08:00', // HH:MM — time crons fire
@@ -100,5 +100,26 @@ class WCLPM_Settings {
             'crm_api_key'                 => sanitize_text_field( $data['crm_api_key'] ?? '' ),
             'crm_group_label'             => sanitize_text_field( $data['crm_group_label'] ?? $defaults['crm_group_label'] ),
         ];
+    }
+
+    /**
+     * Build a one-line store address from WooCommerce store settings.
+     * Used as the default for the email footer address setting.
+     */
+    private static function get_wc_store_address() {
+        $address  = get_option( 'woocommerce_store_address', '' );
+        $address2 = get_option( 'woocommerce_store_address_2', '' );
+        $city     = get_option( 'woocommerce_store_city', '' );
+        $postcode = get_option( 'woocommerce_store_postcode', '' );
+
+        // woocommerce_default_country is stored as "US:NY" or just "US"
+        $country_state = get_option( 'woocommerce_default_country', '' );
+        $state         = '';
+        if ( strpos( $country_state, ':' ) !== false ) {
+            $state = explode( ':', $country_state, 2 )[1];
+        }
+
+        $parts = array_filter( [ $address, $address2, $city, $state, $postcode ] );
+        return implode( ', ', $parts );
     }
 }

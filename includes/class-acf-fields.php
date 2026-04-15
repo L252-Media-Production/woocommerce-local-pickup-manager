@@ -48,7 +48,8 @@ class WCLPM_ACF_Fields {
                     'label'        => 'Slot Capacity Override',
                     'name'         => 'location_capacity',
                     'type'         => 'number',
-                    'instructions' => 'Max orders per 15-minute slot. Leave blank to use the plugin-wide default.',
+                    'instructions' => 'Max orders per 15-minute slot. Default: 5.',
+                    'default_value' => 5,
                     'required'     => 0,
                     'min'          => 1,
                 ],
@@ -81,6 +82,7 @@ class WCLPM_ACF_Fields {
                             'name'     => 'day_of_week',
                             'type'     => 'select',
                             'required' => 1,
+                            'wrapper'  => [ 'width' => '50' ],
                             'choices'  => [
                                 'monday'    => 'Monday',
                                 'tuesday'   => 'Tuesday',
@@ -99,6 +101,7 @@ class WCLPM_ACF_Fields {
                             'instructions' => 'One or more open windows for this day.',
                             'layout'       => 'table',
                             'button_label' => 'Add Time Range',
+                            'wrapper'      => [ 'width' => '50' ],
                             'sub_fields'   => [
                                 [
                                     'key'            => 'field_wclpm_loc_default_start',
@@ -142,6 +145,7 @@ class WCLPM_ACF_Fields {
                             'type'         => 'repeater',
                             'layout'       => 'table',
                             'button_label' => 'Add Date',
+                            'wrapper'      => [ 'width' => '50' ],
                             'sub_fields'   => [
                                 [
                                     'key'            => 'field_wclpm_loc_schedule_date',
@@ -161,6 +165,7 @@ class WCLPM_ACF_Fields {
                             'type'         => 'repeater',
                             'layout'       => 'table',
                             'button_label' => 'Add Time Range',
+                            'wrapper'      => [ 'width' => '50' ],
                             'sub_fields'   => [
                                 [
                                     'key'            => 'field_wclpm_loc_schedule_start',
@@ -274,6 +279,7 @@ class WCLPM_ACF_Fields {
                     'required'          => 0,
                     'display_format'    => 'F j, Y',
                     'return_format'     => 'Ymd',
+                    'wrapper'           => [ 'width' => '50' ],
                     'conditional_logic' => [
                         [
                             [ 'field' => 'field_wclpm_prod_pickup_only', 'operator' => '==', 'value' => '1' ],
@@ -289,6 +295,7 @@ class WCLPM_ACF_Fields {
                     'required'          => 0,
                     'display_format'    => 'F j, Y',
                     'return_format'     => 'Ymd',
+                    'wrapper'           => [ 'width' => '50' ],
                     'conditional_logic' => [
                         [
                             [ 'field' => 'field_wclpm_prod_pickup_only', 'operator' => '==', 'value' => '1' ],
@@ -307,6 +314,7 @@ class WCLPM_ACF_Fields {
                     'required'       => 0,
                     'display_format' => 'F j, Y g:i A',
                     'return_format'  => 'Y-m-d H:i:s',
+                    'wrapper'        => [ 'width' => '50' ],
                 ],
                 [
                     'key'            => 'field_wclpm_prod_avail_end',
@@ -317,6 +325,7 @@ class WCLPM_ACF_Fields {
                     'required'       => 0,
                     'display_format' => 'F j, Y g:i A',
                     'return_format'  => 'Y-m-d H:i:s',
+                    'wrapper'        => [ 'width' => '50' ],
                 ],
                 [
                     'key'               => 'field_wclpm_prod_expires',
