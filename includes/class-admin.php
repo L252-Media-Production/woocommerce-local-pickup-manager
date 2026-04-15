@@ -1,7 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-class GNYC_Pickup_Admin {
+class WCLPM_Admin {
 
     public function __construct() {
         add_action( 'admin_menu',         [ $this, 'register_menu' ] );
@@ -18,7 +18,7 @@ class GNYC_Pickup_Admin {
             'Pickup Manager',
             'Pickup Manager',
             'manage_woocommerce',
-            'gnyc-pickup-manager',
+            'wclpm-manager',
             [ $this, 'render_settings_page' ]
         );
 
@@ -27,7 +27,7 @@ class GNYC_Pickup_Admin {
             'Pickup Change Requests',
             'Change Requests',
             'manage_woocommerce',
-            'gnyc-pickup-change-requests',
+            'wclpm-change-requests',
             [ $this, 'render_change_requests_page' ]
         );
     }
@@ -36,18 +36,18 @@ class GNYC_Pickup_Admin {
 
     public function handle_save() {
         if (
-            ! isset( $_POST['gnyc_pickup_save_settings'] ) ||
+            ! isset( $_POST['wclpm_save_settings'] ) ||
             ! current_user_can( 'manage_woocommerce' ) ||
-            ! check_admin_referer( 'gnyc_pickup_settings_save' )
+            ! check_admin_referer( 'wclpm_settings_save' )
         ) {
             return;
         }
 
-        GNYC_Pickup_Settings::save( $_POST );
+        WCLPM_Settings::save( $_POST );
 
         // Reschedule crons if send time changed
-        GNYC_Pickup_Reminders::unschedule_crons();
-        GNYC_Pickup_Reminders::schedule_crons();
+        WCLPM_Reminders::unschedule_crons();
+        WCLPM_Reminders::schedule_crons();
 
         add_action( 'admin_notices', function() {
             echo '<div class="notice notice-success is-dismissible"><p>Pickup Manager settings saved.</p></div>';
@@ -57,29 +57,29 @@ class GNYC_Pickup_Admin {
     // ─── Styles ────────────────────────────────────────────────────────────
 
     public function enqueue_styles( $hook ) {
-        if ( strpos( $hook, 'gnyc-pickup' ) === false ) {
+        if ( strpos( $hook, 'wclpm' ) === false ) {
             return;
         }
         // Minimal inline styles — no external dependency
         wp_add_inline_style( 'wp-admin', '
-            .gnyc-pickup-wrap h1 { margin-bottom: 20px; }
-            .gnyc-settings-table { width: 100%; max-width: 760px; border-collapse: collapse; }
-            .gnyc-settings-table th { width: 260px; text-align: left; padding: 14px 10px; vertical-align: top; font-weight: 600; }
-            .gnyc-settings-table td { padding: 10px; vertical-align: top; }
-            .gnyc-settings-table tr { border-bottom: 1px solid #f0f0f0; }
-            .gnyc-settings-table input[type=text],
-            .gnyc-settings-table input[type=email],
-            .gnyc-settings-table input[type=time],
-            .gnyc-settings-table input[type=number],
-            .gnyc-settings-table select { width: 100%; max-width: 360px; }
-            .gnyc-section-heading { background: #1a1a2e; color: #fff; padding: 8px 12px; border-radius: 4px; margin: 28px 0 4px; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; max-width: 760px; }
-            .gnyc-settings-desc { color: #666; font-size: 12px; margin-top: 4px; }
-            .gnyc-cr-table { width: 100%; border-collapse: collapse; }
-            .gnyc-cr-table th, .gnyc-cr-table td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; text-align: left; }
-            .gnyc-cr-table th { background: #f8f8f8; font-weight: 700; }
-            .gnyc-badge { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:600; }
-            .gnyc-badge-pending  { background:#fff3cd; color:#856404; }
-            .gnyc-badge-resolved { background:#d1e7dd; color:#0a3622; }
+            .wclpm-wrap h1 { margin-bottom: 20px; }
+            .wclpm-settings-table { width: 100%; max-width: 760px; border-collapse: collapse; }
+            .wclpm-settings-table th { width: 260px; text-align: left; padding: 14px 10px; vertical-align: top; font-weight: 600; }
+            .wclpm-settings-table td { padding: 10px; vertical-align: top; }
+            .wclpm-settings-table tr { border-bottom: 1px solid #f0f0f0; }
+            .wclpm-settings-table input[type=text],
+            .wclpm-settings-table input[type=email],
+            .wclpm-settings-table input[type=time],
+            .wclpm-settings-table input[type=number],
+            .wclpm-settings-table select { width: 100%; max-width: 360px; }
+            .wclpm-section-heading { background: #1a1a2e; color: #fff; padding: 8px 12px; border-radius: 4px; margin: 28px 0 4px; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; max-width: 760px; }
+            .wclpm-settings-desc { color: #666; font-size: 12px; margin-top: 4px; }
+            .wclpm-cr-table { width: 100%; border-collapse: collapse; }
+            .wclpm-cr-table th, .wclpm-cr-table td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; text-align: left; }
+            .wclpm-cr-table th { background: #f8f8f8; font-weight: 700; }
+            .wclpm-badge { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+            .wclpm-badge-pending  { background:#fff3cd; color:#856404; }
+            .wclpm-badge-resolved { background:#d1e7dd; color:#0a3622; }
         ' );
     }
 
@@ -90,17 +90,17 @@ class GNYC_Pickup_Admin {
             wp_die( 'Unauthorized' );
         }
 
-        $s = GNYC_Pickup_Settings::get_all();
+        $s = WCLPM_Settings::get_all();
         ?>
-        <div class="wrap gnyc-pickup-wrap">
+        <div class="wrap wclpm-wrap">
             <h1>⚙️ Pickup Manager Settings</h1>
 
             <form method="post" action="">
-                <?php wp_nonce_field( 'gnyc_pickup_settings_save' ); ?>
+                <?php wp_nonce_field( 'wclpm_settings_save' ); ?>
 
                 <!-- ── Email ───────────────────────────────────────── -->
-                <div class="gnyc-section-heading">📧 Email Sender</div>
-                <table class="gnyc-settings-table">
+                <div class="wclpm-section-heading">📧 Email Sender</div>
+                <table class="wclpm-settings-table">
                     <tr>
                         <th><label for="from_name">Sender Name</label></th>
                         <td>
@@ -113,17 +113,17 @@ class GNYC_Pickup_Admin {
                         <td>
                             <input type="email" id="from_email" name="from_email"
                                    value="<?php echo esc_attr( $s['from_email'] ); ?>">
-                            <p class="gnyc-settings-desc">Must match your WP SMTP authenticated address.</p>
+                            <p class="wclpm-settings-desc">Must match your WP SMTP authenticated address.</p>
                         </td>
                     </tr>
                 </table>
 
                 <!-- ── Subject Lines ──────────────────────────────── -->
-                <div class="gnyc-section-heading">✉️ Email Subject Lines</div>
+                <div class="wclpm-section-heading">✉️ Email Subject Lines</div>
                 <p style="max-width:760px;color:#555;font-size:13px;margin:8px 0 12px;">
                     Available tokens: <code>{date}</code> <code>{time}</code> <code>{order_number}</code> <code>{customer_name}</code>
                 </p>
-                <table class="gnyc-settings-table">
+                <table class="wclpm-settings-table">
                     <tr>
                         <th><label for="reminder_day_before_subject">Day-Before Reminder Subject</label></th>
                         <td>
@@ -151,14 +151,14 @@ class GNYC_Pickup_Admin {
                 </table>
 
                 <!-- ── Reminder Timing ────────────────────────────── -->
-                <div class="gnyc-section-heading">⏰ Reminder Timing</div>
-                <table class="gnyc-settings-table">
+                <div class="wclpm-section-heading">⏰ Reminder Timing</div>
+                <table class="wclpm-settings-table">
                     <tr>
                         <th><label for="reminder_send_time">Daily Send Time</label></th>
                         <td>
                             <input type="time" id="reminder_send_time" name="reminder_send_time"
                                    value="<?php echo esc_attr( $s['reminder_send_time'] ); ?>">
-                            <p class="gnyc-settings-desc">
+                            <p class="wclpm-settings-desc">
                                 Both reminders (day-before and morning-of) fire at this time daily.<br>
                                 Uses your WordPress timezone (<?php echo esc_html( wp_timezone_string() ); ?>).
                                 Changing this will reschedule the cron jobs automatically.
@@ -168,15 +168,15 @@ class GNYC_Pickup_Admin {
                 </table>
 
                 <!-- ── Slot Settings ──────────────────────────────── -->
-                <div class="gnyc-section-heading">📅 Slot Availability</div>
-                <table class="gnyc-settings-table">
+                <div class="wclpm-section-heading">📅 Slot Availability</div>
+                <table class="wclpm-settings-table">
                     <tr>
                         <th><label for="default_slot_capacity">Default Slot Capacity</label></th>
                         <td>
                             <input type="number" id="default_slot_capacity" name="default_slot_capacity"
                                    value="<?php echo esc_attr( $s['default_slot_capacity'] ); ?>"
                                    min="1" max="999">
-                            <p class="gnyc-settings-desc">Max orders per 15-minute slot. Per-location overrides can be set in ACF.</p>
+                            <p class="wclpm-settings-desc">Max orders per 15-minute slot. Per-location overrides can be set in ACF.</p>
                         </td>
                     </tr>
                     <tr>
@@ -185,14 +185,14 @@ class GNYC_Pickup_Admin {
                             <input type="number" id="booking_window_days" name="booking_window_days"
                                    value="<?php echo esc_attr( $s['booking_window_days'] ); ?>"
                                    min="1" max="365">
-                            <p class="gnyc-settings-desc">How far ahead customers can see and book available slots.</p>
+                            <p class="wclpm-settings-desc">How far ahead customers can see and book available slots.</p>
                         </td>
                     </tr>
                 </table>
 
                 <!-- ── Change Requests ────────────────────────────── -->
-                <div class="gnyc-section-heading">🔄 Pickup Change Requests</div>
-                <table class="gnyc-settings-table">
+                <div class="wclpm-section-heading">🔄 Pickup Change Requests</div>
+                <table class="wclpm-settings-table">
                     <tr>
                         <th>Allow Change Requests</th>
                         <td>
@@ -209,7 +209,7 @@ class GNYC_Pickup_Admin {
                             <input type="number" id="change_cutoff_hours" name="change_cutoff_hours"
                                    value="<?php echo esc_attr( $s['change_cutoff_hours'] ); ?>"
                                    min="0" max="720">
-                            <p class="gnyc-settings-desc">
+                            <p class="wclpm-settings-desc">
                                 Set to <strong>0</strong> to allow requests any time.<br>
                                 e.g. <strong>24</strong> = requests blocked within 24 hours of pickup time.
                             </p>
@@ -218,7 +218,7 @@ class GNYC_Pickup_Admin {
                 </table>
 
                 <p style="margin-top:24px;">
-                    <input type="submit" name="gnyc_pickup_save_settings"
+                    <input type="submit" name="wclpm_save_settings"
                            class="button button-primary button-large"
                            value="Save Settings">
                 </p>
@@ -235,12 +235,12 @@ class GNYC_Pickup_Admin {
         }
 
         global $wpdb;
-        $table = GNYC_Pickup_Database::table();
+        $table = WCLPM_Database::table();
 
         // Handle mark-resolved action
         if (
             isset( $_GET['resolve'], $_GET['booking_id'] ) &&
-            check_admin_referer( 'gnyc_resolve_cr_' . intval( $_GET['booking_id'] ) )
+            check_admin_referer( 'wclpm_resolve_cr_' . intval( $_GET['booking_id'] ) )
         ) {
             $wpdb->update(
                 $table,
@@ -258,13 +258,13 @@ class GNYC_Pickup_Admin {
              ORDER BY b.change_requested ASC, b.pickup_date ASC"
         );
         ?>
-        <div class="wrap gnyc-pickup-wrap">
+        <div class="wrap wclpm-wrap">
             <h1>🔄 Pickup Change Requests</h1>
 
             <?php if ( empty( $requests ) ) : ?>
                 <p>No change requests on file.</p>
             <?php else : ?>
-            <table class="gnyc-cr-table widefat">
+            <table class="wclpm-cr-table widefat">
                 <thead>
                     <tr>
                         <th>Order</th>
@@ -287,11 +287,11 @@ class GNYC_Pickup_Admin {
                     $is_resolved  = intval( $row->change_requested ) === 2;
                     $resolve_url  = wp_nonce_url(
                         add_query_arg([
-                            'page'       => 'gnyc-pickup-change-requests',
+                            'page'       => 'wclpm-change-requests',
                             'resolve'    => 1,
                             'booking_id' => $row->id,
                         ], admin_url( 'admin.php' ) ),
-                        'gnyc_resolve_cr_' . $row->id
+                        'wclpm_resolve_cr_' . $row->id
                     );
                 ?>
                 <tr>
@@ -311,9 +311,9 @@ class GNYC_Pickup_Admin {
                     </td>
                     <td>
                         <?php if ( $is_resolved ) : ?>
-                            <span class="gnyc-badge gnyc-badge-resolved">Resolved</span>
+                            <span class="wclpm-badge wclpm-badge-resolved">Resolved</span>
                         <?php else : ?>
-                            <span class="gnyc-badge gnyc-badge-pending">Pending</span>
+                            <span class="wclpm-badge wclpm-badge-pending">Pending</span>
                         <?php endif; ?>
                     </td>
                     <td>

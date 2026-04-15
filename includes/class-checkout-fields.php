@@ -3,7 +3,7 @@ defined( 'ABSPATH' ) || exit;
 
 // ─── Shipping ─────────────────────────────────────────────────────────────────
 
-class GNYC_Pickup_Shipping {
+class WCLPM_Shipping {
     public function __construct() {
         // Re-enable legacy local pickup for classic shortcode checkout
         add_filter( 'woocommerce_shipping_methods', [ $this, 'enable_legacy_pickup' ] );
@@ -17,7 +17,7 @@ class GNYC_Pickup_Shipping {
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────
 
-class GNYC_Pickup_Cart {
+class WCLPM_Cart {
     public function __construct() {
         add_filter( 'woocommerce_package_rates',        [ $this, 'enforce_pickup_only_shipping' ], 10, 2 );
         add_action( 'woocommerce_before_cart',          [ $this, 'pickup_only_cart_notice' ] );
@@ -100,7 +100,7 @@ class GNYC_Pickup_Cart {
 
 // ─── Checkout Fields ──────────────────────────────────────────────────────────
 
-class GNYC_Pickup_Checkout_Fields {
+class WCLPM_Checkout_Fields {
     public function __construct() {
         add_action( 'woocommerce_before_checkout_billing_form', [ $this, 'render_fields' ] );
         add_action( 'woocommerce_checkout_order_processed',     [ $this, 'save_fields' ], 10, 3 );

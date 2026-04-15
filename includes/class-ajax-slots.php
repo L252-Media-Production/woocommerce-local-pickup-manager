@@ -3,7 +3,7 @@ defined( 'ABSPATH' ) || exit;
 
 // ─── Ajax Slots ───────────────────────────────────────────────────────────────
 
-class GNYC_Pickup_Ajax_Slots {
+class WCLPM_Ajax_Slots {
 
     public function __construct() {
         add_action( 'wp_ajax_get_pickup_dates',        [ $this, 'get_dates_handler' ] );
@@ -72,7 +72,7 @@ class GNYC_Pickup_Ajax_Slots {
             $start_dt = clone $today;
         }
         if ( ! $end_dt ) {
-            $booking_window = intval( GNYC_Pickup_Settings::get( 'booking_window_days', 90 ) );
+            $booking_window = intval( WCLPM_Settings::get( 'booking_window_days', 90 ) );
             $end_dt         = clone $today;
             $end_dt->modify( '+' . $booking_window . ' days' );
         }
@@ -153,7 +153,7 @@ class GNYC_Pickup_Ajax_Slots {
         $acf_capacity  = get_field( 'location_capacity', $location_id );
         $capacity      = $acf_capacity
             ? intval( $acf_capacity )
-            : intval( GNYC_Pickup_Settings::get( 'default_slot_capacity', 5 ) );
+            : intval( WCLPM_Settings::get( 'default_slot_capacity', 5 ) );
 
         $schedule      = get_field( 'pickup_schedule', $location_id );
         $default_hours = get_field( 'default_weekly_hours', $location_id );
@@ -203,7 +203,7 @@ class GNYC_Pickup_Ajax_Slots {
         $is_earliest_day  = $date === $earliest_day_ymd;
 
         global $wpdb;
-        $table      = GNYC_Pickup_Database::table();
+        $table      = WCLPM_Database::table();
         $slots      = [];
         $slot_index = 0;
 
@@ -349,7 +349,7 @@ class GNYC_Pickup_Ajax_Slots {
 
 // ─── Order Meta ───────────────────────────────────────────────────────────────
 
-class GNYC_Pickup_Order_Meta {
+class WCLPM_Order_Meta {
 
     public function __construct() {
         add_action( 'woocommerce_checkout_process',              [ $this, 'validate' ] );
@@ -375,7 +375,7 @@ class GNYC_Pickup_Order_Meta {
     }
 
     public function validate() {
-        $items = GNYC_Pickup_Fields::get_pickup_cart_items();
+        $items = WCLPM_Fields::get_pickup_cart_items();
         if ( empty( $items ) || ! $this->is_local_pickup() ) {
             return;
         }
@@ -392,7 +392,7 @@ class GNYC_Pickup_Order_Meta {
     }
 
     public function save( $order_id, $posted_data, $order ) {
-        $items = GNYC_Pickup_Fields::get_pickup_cart_items();
+        $items = WCLPM_Fields::get_pickup_cart_items();
         if ( empty( $items ) || ! $this->is_local_pickup() ) {
             return;
         }
@@ -414,7 +414,7 @@ class GNYC_Pickup_Order_Meta {
         $customer_email   = $order->get_billing_email();
 
         global $wpdb;
-        $table = GNYC_Pickup_Database::table();
+        $table = WCLPM_Database::table();
 
         $existing = $wpdb->get_var( $wpdb->prepare(
             "SELECT COUNT(*) FROM {$table} WHERE order_id = %d", $order_id
@@ -520,24 +520,24 @@ class GNYC_Pickup_Order_Meta {
     }
 
     public function set_from_email( $email ) {
-        return GNYC_Pickup_Settings::get( 'from_email', $email );
+        return WCLPM_Settings::get( 'from_email', $email );
     }
 
     public function set_from_name( $name ) {
-        return GNYC_Pickup_Settings::get( 'from_name', $name );
+        return WCLPM_Settings::get( 'from_name', $name );
     }
 
     public function set_wp_mail_from( $email ) {
-        return GNYC_Pickup_Settings::get( 'from_email', $email );
+        return WCLPM_Settings::get( 'from_email', $email );
     }
 
     public function set_wp_mail_from_name( $name ) {
-        return GNYC_Pickup_Settings::get( 'from_name', $name );
+        return WCLPM_Settings::get( 'from_name', $name );
     }
 
     public function add_reply_to_header( $args ) {
-        $from_name  = GNYC_Pickup_Settings::get( 'from_name', get_bloginfo( 'name' ) );
-        $from_email = GNYC_Pickup_Settings::get( 'from_email', 'store@gnycyouth.org' );
+        $from_name  = WCLPM_Settings::get( 'from_name', get_bloginfo( 'name' ) );
+        $from_email = WCLPM_Settings::get( 'from_email', '' );
         $reply_to   = $from_name . ' <' . $from_email . '>';
 
         if ( is_array( $args['headers'] ) ) {

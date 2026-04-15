@@ -1,7 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-class GNYC_Pickup_Order_Status {
+class WCLPM_Order_Status {
 
     public function __construct() {
         add_action( 'init',                                         [ $this, 'register_status' ] );
@@ -80,7 +80,7 @@ class GNYC_Pickup_Order_Status {
             return;
         }
 
-        $settings         = GNYC_Pickup_Settings::get_all();
+        $settings         = WCLPM_Settings::get_all();
         $customer_email   = $order->get_billing_email();
         $customer_name    = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
         $location_name    = $pickup['location_name'] ?? '';

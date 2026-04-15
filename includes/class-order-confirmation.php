@@ -3,7 +3,7 @@ defined( 'ABSPATH' ) || exit;
 
 // ─── Order Confirmation ───────────────────────────────────────────────────────
 
-class GNYC_Pickup_Order_Confirmation {
+class WCLPM_Order_Confirmation {
 
     public function __construct() {
         add_action( 'init',       [ $this, 'remove_default_hooks' ] );
@@ -179,7 +179,7 @@ class GNYC_Pickup_Order_Confirmation {
 
 // ─── Reminders ────────────────────────────────────────────────────────────────
 
-class GNYC_Pickup_Reminders {
+class WCLPM_Reminders {
 
     public function __construct() {
         add_action( 'send_pickup_day_before_reminders', [ $this, 'send_day_before' ] );
@@ -187,7 +187,7 @@ class GNYC_Pickup_Reminders {
     }
 
     public static function schedule_crons() {
-        $send_time = GNYC_Pickup_Settings::get( 'reminder_send_time', '08:00' );
+        $send_time = WCLPM_Settings::get( 'reminder_send_time', '08:00' );
         $timezone  = new DateTimeZone( wp_timezone_string() );
         $now       = new DateTime( 'now', $timezone );
         $next_run  = new DateTime( 'today ' . $send_time . ':00', $timezone );
@@ -228,7 +228,7 @@ class GNYC_Pickup_Reminders {
         }
         set_transient( $lock_key, 1, 5 * MINUTE_IN_SECONDS );
 
-        $table    = GNYC_Pickup_Database::table();
+        $table    = WCLPM_Database::table();
         $timezone = new DateTimeZone( wp_timezone_string() );
 
         if ( $is_morning ) {
@@ -260,7 +260,7 @@ class GNYC_Pickup_Reminders {
 
             $email = $this->build_email( $booking, $order_details, $is_morning );
 
-            $settings = GNYC_Pickup_Settings::get_all();
+            $settings = WCLPM_Settings::get_all();
             $headers  = [
                 'Content-Type: text/html; charset=UTF-8',
                 'From: ' . $settings['from_name'] . ' <' . $settings['from_email'] . '>',
@@ -309,7 +309,7 @@ class GNYC_Pickup_Reminders {
     }
 
     private function build_email( $booking, $order_details, $is_morning ) {
-        $settings         = GNYC_Pickup_Settings::get_all();
+        $settings         = WCLPM_Settings::get_all();
         $location_name    = get_the_title( $booking->location_id );
         $location_address = get_field( 'location_address', $booking->location_id );
         $date_obj         = DateTime::createFromFormat( 'Y-m-d', $booking->pickup_date );
@@ -423,7 +423,7 @@ class GNYC_Pickup_Reminders {
 
 // ─── Product Availability ─────────────────────────────────────────────────────
 
-class GNYC_Pickup_Availability {
+class WCLPM_Availability {
 
     public function __construct() {
         add_action( 'woocommerce_single_product_summary', [ $this, 'block_add_to_cart_standard' ], 25 );
@@ -544,7 +544,7 @@ class GNYC_Pickup_Availability {
 
 // ─── Change Requests ─────────────────────────────────────────────────────────
 
-class GNYC_Pickup_Change_Requests {
+class WCLPM_Change_Requests {
 
     public function __construct() {
         add_action( 'woocommerce_order_details_after_order_table', [ $this, 'render_form' ], 20, 1 );
@@ -552,7 +552,7 @@ class GNYC_Pickup_Change_Requests {
     }
 
     public function render_form( $order ) {
-        if ( ! GNYC_Pickup_Settings::get( 'allow_change_requests', true ) ) {
+        if ( ! WCLPM_Settings::get( 'allow_change_requests', true ) ) {
             return;
         }
 
@@ -562,7 +562,7 @@ class GNYC_Pickup_Change_Requests {
         }
 
         // Check cutoff
-        $cutoff_hours = intval( GNYC_Pickup_Settings::get( 'change_cutoff_hours', 24 ) );
+        $cutoff_hours = intval( WCLPM_Settings::get( 'change_cutoff_hours', 24 ) );
         if ( $cutoff_hours > 0 ) {
             $date     = $pickup['date'] ?? '';
             $time     = $pickup['time'] ?? '';
@@ -582,7 +582,7 @@ class GNYC_Pickup_Change_Requests {
         }
 
         global $wpdb;
-        $table    = GNYC_Pickup_Database::table();
+        $table    = WCLPM_Database::table();
         $booking  = $wpdb->get_row( $wpdb->prepare(
             "SELECT * FROM {$table} WHERE order_id = %d LIMIT 1",
             $order->get_id()
@@ -595,21 +595,21 @@ class GNYC_Pickup_Change_Requests {
             return;
         }
 
-        $nonce = wp_create_nonce( 'gnyc_change_request_' . $order->get_id() );
+        $nonce = wp_create_nonce( 'wclpm_change_request_' . $order->get_id() );
         ?>
         <div style="margin-top:30px;padding:20px;border:1px solid #e5e5e5;border-radius:8px;background:#f9f9f9;">
             <h3 style="margin-top:0;">Request a Pickup Change</h3>
             <p style="font-size:13px;color:#666;">Need a different date, time, or location? Submit a request and we'll reach out to assist you.</p>
             <form method="post">
-                <?php wp_nonce_field( 'gnyc_change_request_' . $order->get_id(), 'gnyc_cr_nonce' ); ?>
-                <input type="hidden" name="gnyc_change_request_order_id" value="<?php echo esc_attr( $order->get_id() ); ?>">
+                <?php wp_nonce_field( 'wclpm_change_request_' . $order->get_id(), 'wclpm_cr_nonce' ); ?>
+                <input type="hidden" name="wclpm_change_request_order_id" value="<?php echo esc_attr( $order->get_id() ); ?>">
                 <p>
-                    <label for="gnyc_change_note" style="display:block;font-weight:bold;margin-bottom:6px;">Details of your request</label>
-                    <textarea id="gnyc_change_note" name="gnyc_change_note" rows="4"
+                    <label for="wclpm_change_note" style="display:block;font-weight:bold;margin-bottom:6px;">Details of your request</label>
+                    <textarea id="wclpm_change_note" name="wclpm_change_note" rows="4"
                               style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;box-sizing:border-box;"
                               placeholder="e.g. Can I reschedule to Saturday May 10 between 2–4pm?"></textarea>
                 </p>
-                <button type="submit" name="gnyc_submit_change_request"
+                <button type="submit" name="wclpm_submit_change_request"
                         style="background:#1a1a2e;color:#fff;border:none;padding:10px 20px;border-radius:4px;cursor:pointer;font-size:14px;">
                     Submit Request
                 </button>
@@ -619,12 +619,12 @@ class GNYC_Pickup_Change_Requests {
     }
 
     public function handle_submission() {
-        if ( ! isset( $_POST['gnyc_submit_change_request'] ) ) {
+        if ( ! isset( $_POST['wclpm_submit_change_request'] ) ) {
             return;
         }
 
-        $order_id = intval( $_POST['gnyc_change_request_order_id'] ?? 0 );
-        if ( ! $order_id || ! check_admin_referer( 'gnyc_change_request_' . $order_id, 'gnyc_cr_nonce' ) ) {
+        $order_id = intval( $_POST['wclpm_change_request_order_id'] ?? 0 );
+        if ( ! $order_id || ! check_admin_referer( 'wclpm_change_request_' . $order_id, 'wclpm_cr_nonce' ) ) {
             return;
         }
 
@@ -638,10 +638,10 @@ class GNYC_Pickup_Change_Requests {
             return;
         }
 
-        $note = sanitize_textarea_field( $_POST['gnyc_change_note'] ?? '' );
+        $note = sanitize_textarea_field( $_POST['wclpm_change_note'] ?? '' );
 
         global $wpdb;
-        $table = GNYC_Pickup_Database::table();
+        $table = WCLPM_Database::table();
 
         $wpdb->update(
             $table,

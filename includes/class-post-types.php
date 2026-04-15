@@ -1,7 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-class GNYC_Pickup_Post_Types {
+class WCLPM_Post_Types {
 
     public function __construct() {
         add_action( 'init', [ $this, 'register_pickup_location_cpt' ] );

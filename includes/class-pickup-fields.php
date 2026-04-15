@@ -1,7 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-class GNYC_Pickup_Fields {
+class WCLPM_Fields {
 
     public function __construct() {
         add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
@@ -15,14 +15,14 @@ class GNYC_Pickup_Fields {
 
         // JS file lives in the plugin's assets folder
         wp_enqueue_script(
-            'gnyc-pickup-checkout',
-            GNYC_PICKUP_URL . 'assets/js/pickup-checkout.js',
+            'wclpm-pickup-checkout',
+            WCLPM_URL . 'assets/js/pickup-checkout.js',
             [ 'jquery' ],
-            GNYC_PICKUP_VERSION,
+            WCLPM_VERSION,
             true
         );
 
-        wp_localize_script( 'gnyc-pickup-checkout', 'pickupData', [
+        wp_localize_script( 'wclpm-pickup-checkout', 'pickupData', [
             'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
             'nonce'     => wp_create_nonce( 'pickup_nonce' ),
             'cartItems' => $this->get_pickup_cart_items(),

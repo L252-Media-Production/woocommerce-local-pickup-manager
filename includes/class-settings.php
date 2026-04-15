@@ -1,9 +1,9 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-class GNYC_Pickup_Settings {
+class WCLPM_Settings {
 
-    const OPTION_KEY = 'gnyc_pickup_settings';
+    const OPTION_KEY = 'wclpm_settings';
 
     /**
      * Seed default values on first activation.

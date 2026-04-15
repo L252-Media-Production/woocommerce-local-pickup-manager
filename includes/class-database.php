@@ -1,7 +1,7 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-class GNYC_Pickup_Database {
+class WCLPM_Database {
 
     /**
      * Create the pickup_bookings table.
