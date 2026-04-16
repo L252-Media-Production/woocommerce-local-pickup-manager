@@ -57,6 +57,18 @@ class WCLPM_Settings {
     /**
      * Get all settings, merged with defaults.
      */
+    /**
+     * Return a display-safe masked version of the API key.
+     * Shows the last 4 characters; masks the rest with bullets.
+     */
+    public static function mask_api_key( $key ) {
+        if ( empty( $key ) ) {
+            return '';
+        }
+        $visible = min( 4, strlen( $key ) );
+        return str_repeat( '•', max( 0, strlen( $key ) - $visible ) ) . substr( $key, -$visible );
+    }
+
     public static function get_all() {
         $saved = get_option( self::OPTION_KEY, [] );
         return wp_parse_args( $saved, self::defaults() );
@@ -104,7 +116,9 @@ class WCLPM_Settings {
                                                 'esc_url_raw',
                                                 array_map( 'trim', explode( "\n", $data['crm_api_url'] ?? '' ) )
                                             ) ) ),
-            'crm_api_key'                 => sanitize_text_field( $data['crm_api_key'] ?? '' ),
+            'crm_api_key'                 => ( strpos( $data['crm_api_key'] ?? '', '•' ) !== false )
+                                                ? self::get( 'crm_api_key', '' )  // masked — keep existing
+                                                : sanitize_text_field( $data['crm_api_key'] ?? '' ),
             'crm_group_label'             => sanitize_text_field( $data['crm_group_label'] ?? $defaults['crm_group_label'] ),
             'crm_max_per_page'            => max( 1, intval( $data['crm_max_per_page'] ?? $defaults['crm_max_per_page'] ) ),
             'crm_offset_param'            => sanitize_key( $data['crm_offset_param'] ?? $defaults['crm_offset_param'] ),

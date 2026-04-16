@@ -271,9 +271,14 @@ class WCLPM_Admin {
                         <th><label for="crm_api_key">API Key</label></th>
                         <td>
                             <input type="text" id="crm_api_key" name="crm_api_key"
-                                   value="<?php echo esc_attr( $s['crm_api_key'] ); ?>"
-                                   autocomplete="off">
-                            <p class="wclpm-settings-desc">Sent as the <code>X-Api-Key</code> header. Leave blank if your endpoint needs no authentication.</p>
+                                   value="<?php echo esc_attr( WCLPM_Settings::mask_api_key( $s['crm_api_key'] ) ); ?>"
+                                   autocomplete="off" style="font-family:monospace;">
+                            <p class="wclpm-settings-desc">
+                                Sent as the <code>X-Api-Key</code> header. Leave blank if your endpoint needs no authentication.
+                                <?php if ( ! empty( $s['crm_api_key'] ) ) : ?>
+                                To replace the key, clear this field and enter the new value.
+                                <?php endif; ?>
+                            </p>
                         </td>
                     </tr>
                     <tr>

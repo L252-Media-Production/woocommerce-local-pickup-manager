@@ -4,7 +4,7 @@ Tags: woocommerce, local pickup, scheduling, shipping, time slots
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,9 @@ The plugin registers its own shipping method for use in shipping zones and autom
 
 == Changelog ==
 
+= 1.1.1 =
+* Security: CRM API key is now masked in the admin settings page — only the last 4 characters are visible after saving
+
 = 1.1.0 =
 * CRM integration: support multiple API URLs (one per line) — results are merged, deduplicated, and sorted alphabetically
 * CRM integration: automatic pagination loops through all pages until every record is retrieved
@@ -101,6 +104,9 @@ The plugin registers its own shipping method for use in shipping zones and autom
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Security patch: the CRM API key is now masked in admin settings.
 
 = 1.1.0 =
 CRM integration now supports multiple API URLs and automatic pagination to retrieve more than the per-request limit.
