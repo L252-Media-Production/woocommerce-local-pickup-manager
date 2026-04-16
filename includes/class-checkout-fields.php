@@ -291,8 +291,8 @@ class WCLPM_Checkout_Fields {
                 <h3><?php echo esc_html( $group_label ); ?></h3>
                 <p class="form-row form-row-wide" id="church_affiliation_field">
                     <label for="church_affiliation"><?php echo esc_html( $group_label ); ?> <span class="required">*</span></label>
-                    <select name="church_affiliation_id" id="church_affiliation" class="select input-text" style="width:100%;padding:8px;">
-                        <option value="">— Select an option —</option>
+                    <select name="church_affiliation_id" id="church_affiliation" class="select input-text" style="width:100%;">
+                        <option value="">— Type to search your church —</option>
                         <?php foreach ( $groups as $group ) : ?>
                         <option value="<?php echo esc_attr( $group['id'] ); ?>"
                                 data-name="<?php echo esc_attr( $group['name'] ); ?>">
@@ -303,6 +303,22 @@ class WCLPM_Checkout_Fields {
                 </p>
             </div>
         </div>
+        <script>
+        jQuery(function($) {
+            function initChurchSelect2() {
+                if ( typeof $.fn.select2 === 'undefined' ) { return; }
+                var $s = $('#church_affiliation');
+                if ( ! $s.length || $s.hasClass('select2-hidden-accessible') ) { return; }
+                $s.select2({
+                    placeholder: '— Type to search your church —',
+                    allowClear: true,
+                    width: '100%',
+                });
+            }
+            initChurchSelect2();
+            $(document.body).on('updated_checkout', initChurchSelect2);
+        });
+        </script>
         <?php
     }
 

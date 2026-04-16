@@ -3,7 +3,7 @@
  * Plugin Name:  WooCommerce Local Pickup Manager
  * Plugin URI:   https://github.com/l252mp/woocommerce-local-pickup-manager
  * Description:  Advanced local pickup scheduling for WooCommerce — slot availability, reminder emails, and order workflow.
- * Version:      1.1.1
+ * Version:      1.1.2
  * Author:       L252 Media Production
  * License:      GPL-2.0+
  * Text Domain:  wc-local-pickup
@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-define( 'WCLPM_VERSION',     '1.1.1' );
+define( 'WCLPM_VERSION',     '1.1.2' );
 define( 'WCLPM_PLUGIN_FILE', __FILE__ );
 define( 'WCLPM_PATH',        plugin_dir_path( __FILE__ ) );
 define( 'WCLPM_URL',         plugin_dir_url( __FILE__ ) );
@@ -105,5 +105,11 @@ function wclpm_boot() {
 
     if ( is_admin() ) {
         new WCLPM_Admin();
+    }
+
+    // Run dbDelta on every version change so new columns are added automatically.
+    if ( get_option( 'wclpm_db_version' ) !== WCLPM_VERSION ) {
+        WCLPM_Database::create_table();
+        update_option( 'wclpm_db_version', WCLPM_VERSION );
     }
 }

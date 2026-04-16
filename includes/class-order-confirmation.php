@@ -621,10 +621,8 @@ class WCLPM_Change_Requests {
             $order->get_id()
         ) );
 
-        if ( ! $booking || intval( $booking->change_requested ) === 1 ) {
-            if ( $booking && intval( $booking->change_requested ) === 1 ) {
-                echo '<p style="margin-top:30px;color:#888;font-size:13px;">✅ Your change request has been received. We\'ll be in touch to confirm.</p>';
-            }
+        if ( $booking && intval( $booking->change_requested ) >= 1 ) {
+            echo '<p style="margin-top:30px;color:#888;font-size:13px;">✅ Your change request has been received. We\'ll be in touch to confirm.</p>';
             return;
         }
 
@@ -676,14 +674,36 @@ class WCLPM_Change_Requests {
         global $wpdb;
         $table = WCLPM_Database::table();
 
-        $wpdb->update(
-            $table,
-            [
+        $existing_id = $wpdb->get_var( $wpdb->prepare(
+            "SELECT id FROM {$table} WHERE order_id = %d LIMIT 1",
+            $order_id
+        ) );
+
+        if ( $existing_id ) {
+            $wpdb->update(
+                $table,
+                [
+                    'change_requested'    => 1,
+                    'change_request_note' => $note,
+                ],
+                [ 'order_id' => $order_id ]
+            );
+        } else {
+            // No booking row (e.g. order placed before plugin was active) — insert one
+            // so the request appears on the admin Change Requests page.
+            $pickup = $order->get_meta( '_pickup_selections' );
+            $date   = ! empty( $pickup['date'] ) ? DateTime::createFromFormat( 'Ymd', $pickup['date'] ) : null;
+            $wpdb->insert( $table, [
+                'order_id'            => $order_id,
+                'product_id'          => 0,
+                'location_id'         => intval( $pickup['location_id'] ?? 0 ),
+                'pickup_date'         => $date ? $date->format( 'Y-m-d' ) : '',
+                'pickup_time'         => $pickup['time'] ?? '',
+                'customer_email'      => $order->get_billing_email(),
                 'change_requested'    => 1,
                 'change_request_note' => $note,
-            ],
-            [ 'order_id' => $order_id ]
-        );
+            ] );
+        }
 
         // Add internal order note
         $order->add_order_note(
