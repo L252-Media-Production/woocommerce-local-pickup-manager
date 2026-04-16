@@ -57,8 +57,8 @@ Advanced local pickup scheduling for WooCommerce. Instead of a plain "local pick
 | WordPress | 6.0+ | |
 | WooCommerce | 7.0+ | Hard requirement — plugin deactivates without it |
 | PHP | 7.4+ | |
-| ACF Pro | Optional | When active, provides the field UI for pickup locations and products. When absent, native WordPress meta boxes are used automatically — no configuration needed. |
-| Elementor Pro | Optional | The seasonal availability feature includes an enhancement that hides the Elementor add-to-cart widget when a product is out of season. This only activates when Elementor Pro is detected. All other features work with native WooCommerce and any theme. |
+| ACF Pro | **Required** | Currently required for the field UI on pickup locations and products. Work is in progress to replace this with native WordPress meta boxes so ACF Pro will become optional in a future release. |
+| Elementor Pro | **Required** | Currently required for the seasonal availability feature. Work is in progress to implement this via standard WooCommerce hooks so Elementor Pro will become optional in a future release. |
 | WP SMTP (or equivalent) | Recommended | Required for reliable email delivery |
 
 ---
@@ -126,19 +126,19 @@ Configure under **WooCommerce → Pickup Manager**:
 
 ---
 
-## ACF Pro — Optional Enhancement
+## ACF Pro — Current Requirement (Removal In Progress)
 
-When **ACF Pro** is active, pickup location and product fields are managed through ACF's polished repeater and relationship UI (registered programmatically — no JSON import needed).
+**ACF Pro is currently required.** Pickup location and product fields are managed through ACF's repeater and relationship UI, registered programmatically — no JSON import needed.
 
-When **ACF Pro is not active**, the plugin automatically falls back to native WordPress meta boxes with equivalent functionality: text/number inputs for simple fields, and add/remove row tables for schedules and time ranges.
-
-Data is stored in `wp_postmeta`. ACF Pro can be added or removed at any time without data loss, as long as data entry is done through only one UI at a time.
+Work is in progress to replace the ACF dependency with native WordPress meta boxes. Once complete, ACF Pro will become fully optional: when active it will continue to provide the polished repeater UI; when absent, the plugin will fall back to native meta boxes automatically with no data loss.
 
 ---
 
-## Elementor Pro — Optional Enhancement
+## Elementor Pro — Current Requirement (Removal In Progress)
 
-The seasonal availability feature works on all themes via the standard WooCommerce `woocommerce_single_product_summary` hook. When **Elementor Pro** is also active, an additional enhancement hides the Elementor add-to-cart widget for out-of-season products and replaces it with an availability message.
+**Elementor Pro is currently required** for the seasonal availability feature. The plugin hooks into Elementor Pro to hide the add-to-cart widget for out-of-season products and replace it with an availability message.
+
+Work is in progress to implement this feature via standard WooCommerce hooks so it works with all themes. Once complete, Elementor Pro will become optional — when detected, the Elementor-specific widget enhancement will still activate automatically.
 
 ---
 

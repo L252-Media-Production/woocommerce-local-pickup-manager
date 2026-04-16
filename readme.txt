@@ -28,15 +28,17 @@ WooCommerce Local Pickup Manager replaces the plain "local pickup" option at che
 * Mixed cart prevention — pickup-only products cannot be combined with shippable products
 * Admin settings panel under WooCommerce for email branding, slot capacity, booking window, and more
 
-**ACF Pro — Optional Enhancement**
+**ACF Pro — Currently Required (Removal In Progress)**
 
-When ACF Pro is active, pickup location and product fields are managed through ACF's repeater and relationship UI, registered programmatically with no JSON import needed.
+ACF Pro is currently required. Pickup location and product fields are managed through ACF's repeater and relationship UI, registered programmatically with no JSON import needed.
 
-When ACF Pro is not active, the plugin automatically uses native WordPress meta boxes with equivalent functionality — no configuration required.
+Work is in progress to replace the ACF dependency with native WordPress meta boxes. Once complete, ACF Pro will become optional — when active it will continue to provide its polished UI; when absent, the plugin will fall back to native meta boxes automatically.
 
-**Elementor Pro — Optional Enhancement**
+**Elementor Pro — Currently Required (Removal In Progress)**
 
-The seasonal availability feature works with all themes via standard WooCommerce hooks. When Elementor Pro is detected, an additional enhancement hides the Elementor add-to-cart widget for out-of-season products and replaces it with an availability message.
+Elementor Pro is currently required for the seasonal availability feature, which hides the Elementor add-to-cart widget for out-of-season products and replaces it with an availability message.
+
+Work is in progress to implement this via standard WooCommerce hooks so all themes are supported. Once complete, Elementor Pro will become optional.
 
 == Installation ==
 
@@ -50,11 +52,11 @@ The seasonal availability feature works with all themes via standard WooCommerce
 
 = Does this plugin require ACF Pro? =
 
-No. ACF Pro is optional. When active it provides a polished repeater UI for managing schedules. When absent, the plugin falls back to native WordPress meta boxes automatically — no configuration required.
+Yes, currently. ACF Pro is required in the current release for the field UI on pickup locations and products. Work is in progress to remove this dependency — a future release will fall back to native WordPress meta boxes automatically when ACF Pro is not active.
 
 = Does this plugin require Elementor Pro? =
 
-No. All features work with native WooCommerce and any theme. Elementor Pro is detected automatically and enables an additional enhancement for the seasonal availability feature.
+Yes, currently. Elementor Pro is required in the current release for the seasonal availability feature. Work is in progress to remove this dependency so the feature will work with all themes via standard WooCommerce hooks.
 
 = How are pickup slots generated? =
 
