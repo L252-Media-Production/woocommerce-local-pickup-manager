@@ -172,8 +172,8 @@ class WCLPM_Checkout_Fields {
     }
 
     public function get_crm_groups() {
-        $api_url = WCLPM_Settings::get( 'crm_api_url', '' );
-        if ( empty( $api_url ) ) {
+        $api_urls_raw = WCLPM_Settings::get( 'crm_api_url', '' );
+        if ( empty( $api_urls_raw ) ) {
             return [];
         }
 
@@ -183,37 +183,82 @@ class WCLPM_Checkout_Fields {
             return $cached;
         }
 
-        $headers = [ 'Accept' => 'application/json' ];
-        $api_key = WCLPM_Settings::get( 'crm_api_key', '' );
+        $headers      = [ 'Accept' => 'application/json' ];
+        $api_key      = WCLPM_Settings::get( 'crm_api_key', '' );
+        $max_per_page = (int) WCLPM_Settings::get( 'crm_max_per_page', 200 );
+        $offset_param = WCLPM_Settings::get( 'crm_offset_param', 'offset' );
+        $limit_param  = WCLPM_Settings::get( 'crm_limit_param', 'maxSize' );
+        $list_key     = WCLPM_Settings::get( 'crm_list_key', 'list' );
+
         if ( ! empty( $api_key ) ) {
             $headers['X-Api-Key'] = $api_key;
         }
 
-        $response = wp_remote_get( $api_url, [
-            'timeout' => 15,
-            'headers' => $headers,
-        ]);
+        $request_args = [ 'timeout' => 15, 'headers' => $headers ];
+        $seen_ids     = [];
+        $groups       = [];
 
-        if ( is_wp_error( $response ) ) {
-            return [];
-        }
-        if ( wp_remote_retrieve_response_code( $response ) !== 200 ) {
-            return [];
-        }
+        // Support one URL per line so results from multiple endpoints can be merged.
+        $urls = array_filter( array_map( 'trim', explode( "\n", $api_urls_raw ) ) );
 
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
-        if ( empty( $body['list'] ) || ! is_array( $body['list'] ) ) {
-            return [];
-        }
+        foreach ( $urls as $api_url ) {
+            $separator = ( strpos( $api_url, '?' ) !== false ) ? '&' : '?';
+            $offset    = 0;
+            $max_pages = 20; // safety cap per URL
 
-        $groups = [];
-        foreach ( $body['list'] as $item ) {
-            if ( isset( $item['id'], $item['name'] ) ) {
-                $groups[] = [ 'id' => $item['id'], 'name' => $item['name'] ];
+            for ( $page = 0; $page < $max_pages; $page++ ) {
+                // Append pagination params directly — avoids add_query_arg() re-encoding
+                // complex query strings such as URL-encoded JSON in searchParams.
+                $paged_url = $api_url . $separator
+                    . rawurlencode( $limit_param )  . '=' . (int) $max_per_page
+                    . '&' . rawurlencode( $offset_param ) . '=' . (int) $offset;
+
+                $response = wp_remote_get( $paged_url, $request_args );
+
+                if ( is_wp_error( $response ) ) {
+                    break;
+                }
+                if ( wp_remote_retrieve_response_code( $response ) !== 200 ) {
+                    break;
+                }
+
+                $body      = json_decode( wp_remote_retrieve_body( $response ), true );
+                $page_list = $body[ $list_key ] ?? null;
+                if ( empty( $page_list ) || ! is_array( $page_list ) ) {
+                    break;
+                }
+
+                $page_count = 0;
+                foreach ( $page_list as $item ) {
+                    if ( isset( $item['id'], $item['name'] ) && ! isset( $seen_ids[ $item['id'] ] ) ) {
+                        $groups[]                = [ 'id' => $item['id'], 'name' => $item['name'] ];
+                        $seen_ids[ $item['id'] ] = true;
+                        $page_count++;
+                    }
+                }
+
+                if ( isset( $body['total'] ) ) {
+                    // Use the declared total to decide whether another page exists.
+                    $url_total = (int) $body['total'];
+                    if ( ( $offset + $max_per_page ) >= $url_total ) {
+                        break;
+                    }
+                } elseif ( count( $page_list ) < $max_per_page ) {
+                    // Partial page — no more items for this URL.
+                    break;
+                }
+
+                $offset += $max_per_page;
             }
         }
 
-        set_transient( $cache_key, $groups, DAY_IN_SECONDS );
+        // Sort merged results alphabetically by name.
+        usort( $groups, fn( $a, $b ) => strcmp( $a['name'], $b['name'] ) );
+
+        if ( ! empty( $groups ) ) {
+            set_transient( $cache_key, $groups, DAY_IN_SECONDS );
+        }
+
         return $groups;
     }
 

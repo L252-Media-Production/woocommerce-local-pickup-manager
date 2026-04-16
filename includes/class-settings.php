@@ -44,9 +44,13 @@ class WCLPM_Settings {
             'change_cutoff_hours'     => 24,      // Hours before pickup; 0 = always allow
 
             // CRM integration (optional — group affiliation field at checkout)
-            'crm_api_url'             => '',   // Full URL incl. query params; leave blank to disable
+            'crm_api_url'             => '',   // Base URL; leave blank to disable
             'crm_api_key'             => '',   // Sent as X-Api-Key header
             'crm_group_label'         => 'Organization Affiliation',
+            'crm_max_per_page'        => 200,  // Items requested per API call
+            'crm_offset_param'        => 'offset',  // Query param name for pagination offset
+            'crm_limit_param'         => 'maxSize', // Query param name for page size
+            'crm_list_key'            => 'list',    // JSON key containing the results array
         ];
     }
 
@@ -96,9 +100,16 @@ class WCLPM_Settings {
             'booking_window_days'         => max( 1, intval( $data['booking_window_days'] ?? $defaults['booking_window_days'] ) ),
             'allow_change_requests'       => ! empty( $data['allow_change_requests'] ),
             'change_cutoff_hours'         => max( 0, intval( $data['change_cutoff_hours'] ?? $defaults['change_cutoff_hours'] ) ),
-            'crm_api_url'                 => esc_url_raw( $data['crm_api_url'] ?? '' ),
+            'crm_api_url'                 => implode( "\n", array_filter( array_map(
+                                                'esc_url_raw',
+                                                array_map( 'trim', explode( "\n", $data['crm_api_url'] ?? '' ) )
+                                            ) ) ),
             'crm_api_key'                 => sanitize_text_field( $data['crm_api_key'] ?? '' ),
             'crm_group_label'             => sanitize_text_field( $data['crm_group_label'] ?? $defaults['crm_group_label'] ),
+            'crm_max_per_page'            => max( 1, intval( $data['crm_max_per_page'] ?? $defaults['crm_max_per_page'] ) ),
+            'crm_offset_param'            => sanitize_key( $data['crm_offset_param'] ?? $defaults['crm_offset_param'] ),
+            'crm_limit_param'             => sanitize_key( $data['crm_limit_param'] ?? $defaults['crm_limit_param'] ),
+            'crm_list_key'                => sanitize_key( $data['crm_list_key'] ?? $defaults['crm_list_key'] ),
         ];
     }
 

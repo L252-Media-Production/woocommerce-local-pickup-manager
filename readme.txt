@@ -4,7 +4,7 @@ Tags: woocommerce, local pickup, scheduling, shipping, time slots
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,10 +92,18 @@ The plugin registers its own shipping method for use in shipping zones and autom
 
 == Changelog ==
 
+= 1.1.0 =
+* CRM integration: support multiple API URLs (one per line) — results are merged, deduplicated, and sorted alphabetically
+* CRM integration: automatic pagination loops through all pages until every record is retrieved
+* CRM integration: configurable items-per-page, offset parameter name, limit parameter name, and response list key — works with any JSON API, not just EspoCRM
+
 = 1.0.0 =
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+CRM integration now supports multiple API URLs and automatic pagination to retrieve more than the per-request limit.
 
 = 1.0.0 =
 Initial release.

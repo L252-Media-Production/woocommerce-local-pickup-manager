@@ -120,9 +120,12 @@ woocommerce-local-pickup-manager/
 | `booking_window_days` | `90` | How far ahead customers can book |
 | `allow_change_requests` | `true` | Show change request form on order page |
 | `change_cutoff_hours` | `24` | Block requests within N hours of pickup (0 = always allow) |
-| `crm_api_url` | _(blank)_ | Full CRM API URL (incl. query params). Blank = feature disabled |
+| `crm_api_url` | _(blank)_ | Base CRM API URL (no pagination params). Blank = feature disabled |
 | `crm_api_key` | _(blank)_ | Sent as `X-Api-Key` header. Blank = unauthenticated request |
 | `crm_group_label` | `Organization Affiliation` | Label for the affiliation dropdown at checkout |
+| `crm_max_per_page` | `200` | Items requested per API call; plugin pages through all results automatically |
+| `crm_offset_param` | `offset` | Query param name for pagination offset (e.g. `offset`, `skip`, `start`) |
+| `crm_limit_param` | `maxSize` | Query param name for page size (e.g. `maxSize`, `limit`, `perPage`) |
 
 ---
 
@@ -190,7 +193,7 @@ Both use a transient lock to prevent duplicate sends on concurrent runs.
 
 | Constant | Value |
 |---|---|
-| `WCLPM_VERSION` | `1.0.0` |
+| `WCLPM_VERSION` | `1.1.0` |
 | `WCLPM_PLUGIN_FILE` | Absolute path to main plugin file |
 | `WCLPM_PATH` | Plugin directory path (trailing slash) |
 | `WCLPM_URL` | Plugin directory URL (trailing slash) |

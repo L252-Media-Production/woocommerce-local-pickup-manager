@@ -247,18 +247,21 @@ class WCLPM_Admin {
                 <div class="wclpm-section-heading">🔗 CRM Integration (optional)</div>
                 <p style="max-width:760px;color:#555;font-size:13px;margin:8px 0 12px;">
                     Populates an affiliation dropdown at checkout from any CRM API.
-                    Leave <strong>API URL</strong> blank to disable the feature entirely.
-                    The API must return JSON in the format <code>{"list":[{"id":"…","name":"…"}]}</code>.
+                    Leave <strong>API URLs</strong> blank to disable the feature entirely.
+                    Each endpoint must return JSON in the format <code>{"list":[{"id":"…","name":"…"}]}</code>.
+                    Results from all URLs are merged, deduplicated, and sorted alphabetically.
+                    Pagination is handled automatically per URL.
                 </p>
                 <table class="wclpm-settings-table">
                     <tr>
-                        <th><label for="crm_api_url">API URL</label></th>
+                        <th><label for="crm_api_url">API URLs</label></th>
                         <td>
-                            <input type="url" id="crm_api_url" name="crm_api_url"
-                                   value="<?php echo esc_attr( $s['crm_api_url'] ); ?>"
-                                   placeholder="https://your-crm.example.com/api/v1/groups">
+                            <textarea id="crm_api_url" name="crm_api_url" rows="4"
+                                      style="width:100%;font-family:monospace;font-size:12px;"
+                                      placeholder="https://your-crm.example.com/api/v1/accounts?type=Church&#10;https://your-crm.example.com/api/v1/accounts?type=Company"><?php echo esc_textarea( $s['crm_api_url'] ); ?></textarea>
                             <p class="wclpm-settings-desc">
-                                Full URL including any query parameters you need.
+                                One URL per line. Use multiple URLs to work around per-request result limits — each is fetched separately and results are merged.
+                                Do not include pagination parameters; those are appended automatically.
                                 Results are cached for 24 hours.
                                 <a href="<?php echo esc_url( add_query_arg( 'clear_crm_cache', '1' ) ); ?>">Clear cache now</a>.
                             </p>
@@ -279,6 +282,42 @@ class WCLPM_Admin {
                             <input type="text" id="crm_group_label" name="crm_group_label"
                                    value="<?php echo esc_attr( $s['crm_group_label'] ); ?>">
                             <p class="wclpm-settings-desc">Label shown above the dropdown at checkout (e.g. "Church Affiliation", "Organization").</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="crm_max_per_page">Items Per Request</label></th>
+                        <td>
+                            <input type="number" id="crm_max_per_page" name="crm_max_per_page"
+                                   value="<?php echo esc_attr( $s['crm_max_per_page'] ); ?>"
+                                   min="1" style="width:80px;">
+                            <p class="wclpm-settings-desc">Maximum items the API returns per call. The plugin pages through all results automatically until every item is fetched.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="crm_offset_param">Offset Parameter</label></th>
+                        <td>
+                            <input type="text" id="crm_offset_param" name="crm_offset_param"
+                                   value="<?php echo esc_attr( $s['crm_offset_param'] ); ?>"
+                                   style="width:160px;" placeholder="offset">
+                            <p class="wclpm-settings-desc">Query parameter name for the pagination offset (e.g. <code>offset</code>, <code>skip</code>, <code>start</code>).</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="crm_limit_param">Limit Parameter</label></th>
+                        <td>
+                            <input type="text" id="crm_limit_param" name="crm_limit_param"
+                                   value="<?php echo esc_attr( $s['crm_limit_param'] ); ?>"
+                                   style="width:160px;" placeholder="maxSize">
+                            <p class="wclpm-settings-desc">Query parameter name for the page size (e.g. <code>maxSize</code>, <code>limit</code>, <code>perPage</code>).</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="crm_list_key">Response List Key</label></th>
+                        <td>
+                            <input type="text" id="crm_list_key" name="crm_list_key"
+                                   value="<?php echo esc_attr( $s['crm_list_key'] ); ?>"
+                                   style="width:160px;" placeholder="list">
+                            <p class="wclpm-settings-desc">JSON key in the API response that contains the results array (e.g. <code>list</code>, <code>data</code>, <code>results</code>, <code>items</code>).</p>
                         </td>
                     </tr>
                 </table>
