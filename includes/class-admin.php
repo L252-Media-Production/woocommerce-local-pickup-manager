@@ -79,7 +79,10 @@ class WCLPM_Admin {
             .wclpm-cr-table th { background: #f8f8f8; font-weight: 700; }
             .wclpm-badge { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:600; }
             .wclpm-badge-pending  { background:#fff3cd; color:#856404; }
-            .wclpm-badge-resolved { background:#d1e7dd; color:#0a3622; }
+            .wclpm-badge-approved { background:#d1e7dd; color:#0a3622; }
+            .wclpm-badge-denied   { background:#f8d7da; color:#842029; }
+            .wclpm-process-row td { border-top: none !important; }
+            .wclpm-approve-fields { display:none; gap:16px; flex-wrap:wrap; }
         ' );
     }
 
@@ -345,31 +348,101 @@ class WCLPM_Admin {
         }
 
         global $wpdb;
-        $table = WCLPM_Database::table();
+        $table  = WCLPM_Database::table();
+        $notice = '';
 
-        // Handle mark-resolved action
-        if (
-            isset( $_GET['resolve'], $_GET['booking_id'] ) &&
-            check_admin_referer( 'wclpm_resolve_cr_' . intval( $_GET['booking_id'] ) )
-        ) {
-            $wpdb->update(
-                $table,
-                [ 'change_requested' => 2 ], // 2 = resolved
-                [ 'id' => intval( $_GET['booking_id'] ) ]
-            );
-            echo '<div class="notice notice-success is-dismissible"><p>Request marked as resolved.</p></div>';
+        // Handle process (approve / deny) action
+        if ( isset( $_POST['wclpm_process_cr_submit'] ) ) {
+            $booking_id = intval( $_POST['wclpm_booking_id'] ?? 0 );
+            if ( $booking_id && check_admin_referer( 'wclpm_process_cr_' . $booking_id ) ) {
+                $action  = sanitize_key( $_POST['wclpm_cr_action'] ?? '' );
+                $booking = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $booking_id ) );
+                $order   = $booking ? wc_get_order( $booking->order_id ) : null;
+
+                if ( $booking && $order && in_array( $action, [ 'approve', 'deny' ], true ) ) {
+                    if ( $action === 'approve' ) {
+                        $new_loc_id  = intval( $_POST['new_location_id'] ?? $booking->location_id );
+                        $new_date    = sanitize_text_field( $_POST['new_date'] ?? $booking->pickup_date );
+                        $new_time    = sanitize_text_field( $_POST['new_time'] ?? $booking->pickup_time );
+                        $date_obj    = DateTime::createFromFormat( 'Y-m-d', $new_date );
+                        $time_obj    = DateTime::createFromFormat( 'H:i', $new_time );
+
+                        $wpdb->update( $table, [
+                            'location_id'      => $new_loc_id,
+                            'pickup_date'      => $new_date,
+                            'pickup_time'      => $new_time,
+                            'change_requested' => 2,
+                        ], [ 'id' => $booking_id ] );
+
+                        $old_pickup = (array) ( $order->get_meta( '_pickup_selections' ) ?: [] );
+                        $order->update_meta_data( '_pickup_selections', array_merge( $old_pickup, [
+                            'location_id'      => $new_loc_id,
+                            'location_name'    => get_the_title( $new_loc_id ),
+                            'location_address' => wclpm_get_field( 'location_address', $new_loc_id ),
+                            'date'             => $date_obj ? $date_obj->format( 'Ymd' ) : str_replace( '-', '', $new_date ),
+                            'date_display'     => $date_obj ? $date_obj->format( 'l, F j, Y' ) : $new_date,
+                            'time'             => $new_time,
+                            'time_display'     => $time_obj ? $time_obj->format( 'g:i A' ) : $new_time,
+                        ] ) );
+                        $order->add_order_note( sprintf(
+                            'Pickup change approved. Updated to %s at %s.',
+                            $date_obj ? $date_obj->format( 'M j, Y' ) : $new_date,
+                            $time_obj ? $time_obj->format( 'g:i A' ) : $new_time
+                        ) );
+                        $order->save();
+
+                        $old_date_obj = DateTime::createFromFormat( 'Y-m-d', $booking->pickup_date );
+                        $old_time_obj = DateTime::createFromFormat( 'H:i', $booking->pickup_time );
+                        $this->send_change_request_email( $booking, $order, 'approve', [
+                            'location_name' => get_the_title( $booking->location_id ) ?: ( $old_pickup['location_name'] ?? '' ),
+                            'date_display'  => $old_date_obj ? $old_date_obj->format( 'l, F j, Y' ) : $booking->pickup_date,
+                            'time_display'  => $old_time_obj ? $old_time_obj->format( 'g:i A' ) : $booking->pickup_time,
+                        ], [
+                            'location_name' => get_the_title( $new_loc_id ),
+                            'date_display'  => $date_obj ? $date_obj->format( 'l, F j, Y' ) : $new_date,
+                            'time_display'  => $time_obj ? $time_obj->format( 'g:i A' ) : $new_time,
+                        ] );
+                        $notice = '<div class="notice notice-success is-dismissible"><p>Change request approved and customer notified.</p></div>';
+
+                    } else {
+                        $wpdb->update( $table, [ 'change_requested' => 3 ], [ 'id' => $booking_id ] );
+                        $order->add_order_note( 'Pickup change request denied.' );
+                        $order->save();
+
+                        $old_pickup   = (array) ( $order->get_meta( '_pickup_selections' ) ?: [] );
+                        $old_date_obj = DateTime::createFromFormat( 'Y-m-d', $booking->pickup_date );
+                        $old_time_obj = DateTime::createFromFormat( 'H:i', $booking->pickup_time );
+                        $this->send_change_request_email( $booking, $order, 'deny', [
+                            'location_name' => get_the_title( $booking->location_id ) ?: ( $old_pickup['location_name'] ?? '' ),
+                            'date_display'  => $old_date_obj ? $old_date_obj->format( 'l, F j, Y' ) : $booking->pickup_date,
+                            'time_display'  => $old_time_obj ? $old_time_obj->format( 'g:i A' ) : $booking->pickup_time,
+                        ], null );
+                        $notice = '<div class="notice notice-success is-dismissible"><p>Change request denied and customer notified.</p></div>';
+                    }
+                }
+            }
         }
 
         $requests = $wpdb->get_results(
             "SELECT b.*, p.post_title AS location_name
              FROM {$table} b
              LEFT JOIN {$wpdb->posts} p ON p.ID = b.location_id
-             WHERE b.change_requested IN (1, 2)
+             WHERE b.change_requested IN (1, 2, 3)
              ORDER BY b.change_requested ASC, b.pickup_date ASC"
         );
+
+        $locations = get_posts( [
+            'post_type'      => 'pickup_location',
+            'posts_per_page' => -1,
+            'post_status'    => 'publish',
+            'orderby'        => 'title',
+            'order'          => 'ASC',
+        ] );
         ?>
         <div class="wrap wclpm-wrap">
             <h1>🔄 Pickup Change Requests</h1>
+
+            <?php echo wp_kses_post( $notice ); ?>
 
             <?php if ( empty( $requests ) ) : ?>
                 <p>No change requests on file.</p>
@@ -382,7 +455,6 @@ class WCLPM_Admin {
                         <th>Location</th>
                         <th>Pickup Date</th>
                         <th>Time</th>
-                        <th>Note</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -390,19 +462,12 @@ class WCLPM_Admin {
                 <tbody>
                 <?php foreach ( $requests as $row ) :
                     $order        = wc_get_order( $row->order_id );
-                    $order_link   = $order ? get_edit_post_link( $row->order_id ) : '#';
+                    $order_link   = $order ? $order->get_edit_order_url() : '#';
                     $customer     = $order ? $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() : '—';
                     $date_display = $row->pickup_date ? ( new DateTime( $row->pickup_date ) )->format( 'M j, Y' ) : '—';
                     $time_display = $row->pickup_time ? ( new DateTime( '1970-01-01 ' . $row->pickup_time ) )->format( 'g:i A' ) : '—';
-                    $is_resolved  = intval( $row->change_requested ) === 2;
-                    $resolve_url  = wp_nonce_url(
-                        add_query_arg([
-                            'page'       => 'wclpm-change-requests',
-                            'resolve'    => 1,
-                            'booking_id' => $row->id,
-                        ], admin_url( 'admin.php' ) ),
-                        'wclpm_resolve_cr_' . $row->id
-                    );
+                    $status       = intval( $row->change_requested );
+                    $is_pending   = ( $status === 1 );
                 ?>
                 <tr>
                     <td>
@@ -416,30 +481,187 @@ class WCLPM_Admin {
                     <td><?php echo esc_html( $row->location_name ?: '—' ); ?></td>
                     <td><?php echo esc_html( $date_display ); ?></td>
                     <td><?php echo esc_html( $time_display ); ?></td>
-                    <td style="max-width:220px;font-size:12px;">
-                        <?php echo esc_html( $row->change_request_note ?: '—' ); ?>
-                    </td>
                     <td>
-                        <?php if ( $is_resolved ) : ?>
-                            <span class="wclpm-badge wclpm-badge-resolved">Resolved</span>
-                        <?php else : ?>
+                        <?php if ( $status === 1 ) : ?>
                             <span class="wclpm-badge wclpm-badge-pending">Pending</span>
+                        <?php elseif ( $status === 2 ) : ?>
+                            <span class="wclpm-badge wclpm-badge-approved">Approved</span>
+                        <?php else : ?>
+                            <span class="wclpm-badge wclpm-badge-denied">Denied</span>
                         <?php endif; ?>
                     </td>
                     <td>
-                        <?php if ( ! $is_resolved ) : ?>
-                            <a href="<?php echo esc_url( $resolve_url ); ?>"
-                               class="button button-small">Mark Resolved</a>
+                        <?php if ( $is_pending ) : ?>
+                            <button type="button" class="button button-small wclpm-toggle-form"
+                                    data-target="wclpm-form-<?php echo esc_attr( $row->id ); ?>">
+                                Process
+                            </button>
                         <?php else : ?>
                             —
                         <?php endif; ?>
                     </td>
                 </tr>
+                <?php if ( $is_pending ) : ?>
+                <tr id="wclpm-form-<?php echo esc_attr( $row->id ); ?>" class="wclpm-process-row" style="display:none;background:#f9f9f9;">
+                    <td colspan="7" style="padding:20px 16px;">
+                        <?php if ( ! empty( $row->change_request_note ) ) : ?>
+                        <p style="margin:0 0 16px;padding:10px 14px;background:#fff;border-left:3px solid #1a1a2e;font-size:13px;">
+                            <strong>Customer's request:</strong> <?php echo esc_html( $row->change_request_note ); ?>
+                        </p>
+                        <?php endif; ?>
+                        <form method="post" action="">
+                            <?php wp_nonce_field( 'wclpm_process_cr_' . $row->id ); ?>
+                            <input type="hidden" name="wclpm_process_cr_submit" value="1">
+                            <input type="hidden" name="wclpm_booking_id" value="<?php echo esc_attr( $row->id ); ?>">
+                            <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
+                                <div>
+                                    <label style="font-weight:600;display:block;margin-bottom:8px;">Decision</label>
+                                    <label style="margin-right:16px;cursor:pointer;">
+                                        <input type="radio" name="wclpm_cr_action" value="approve" class="wclpm-cr-radio"> Approve
+                                    </label>
+                                    <label style="cursor:pointer;">
+                                        <input type="radio" name="wclpm_cr_action" value="deny" class="wclpm-cr-radio"> Deny
+                                    </label>
+                                </div>
+                                <div class="wclpm-approve-fields">
+                                    <div>
+                                        <label style="font-weight:600;display:block;margin-bottom:4px;">New Location</label>
+                                        <select name="new_location_id">
+                                            <?php foreach ( $locations as $loc ) : ?>
+                                            <option value="<?php echo esc_attr( $loc->ID ); ?>"
+                                                <?php selected( intval( $loc->ID ), intval( $row->location_id ) ); ?>>
+                                                <?php echo esc_html( $loc->post_title ); ?>
+                                            </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-weight:600;display:block;margin-bottom:4px;">New Date</label>
+                                        <input type="date" name="new_date" value="<?php echo esc_attr( $row->pickup_date ); ?>">
+                                    </div>
+                                    <div>
+                                        <label style="font-weight:600;display:block;margin-bottom:4px;">New Time</label>
+                                        <input type="time" name="new_time" value="<?php echo esc_attr( $row->pickup_time ); ?>">
+                                    </div>
+                                </div>
+                                <div style="align-self:flex-end;padding-top:20px;">
+                                    <button type="submit" class="button button-primary">Confirm</button>
+                                    <button type="button" class="button wclpm-cancel-form"
+                                            data-target="wclpm-form-<?php echo esc_attr( $row->id ); ?>">Cancel</button>
+                                </div>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+                <?php endif; ?>
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            <script>
+            jQuery(function($) {
+                $('.wclpm-toggle-form').on('click', function() {
+                    $('#' + $(this).data('target')).toggle();
+                });
+                $('.wclpm-cancel-form').on('click', function() {
+                    $('#' + $(this).data('target')).hide();
+                });
+                $(document).on('change', '.wclpm-cr-radio', function() {
+                    var $fields = $(this).closest('form').find('.wclpm-approve-fields');
+                    $fields.css('display', $(this).val() === 'approve' ? 'flex' : 'none');
+                });
+            });
+            </script>
             <?php endif; ?>
         </div>
         <?php
+    }
+
+    // ─── Change Request Email ───────────────────────────────────────────────
+
+    private function send_change_request_email( $booking, $order, $action, $old_details, $new_details ) {
+        $settings  = WCLPM_Settings::get_all();
+        $email_to  = $booking->customer_email ?: $order->get_billing_email();
+        $first     = $order->get_billing_first_name();
+        $order_num = $order->get_order_number();
+        $headers   = [
+            'Content-Type: text/html; charset=UTF-8',
+            'From: '     . $settings['from_name'] . ' <' . $settings['from_email'] . '>',
+            'Reply-To: ' . $settings['from_name'] . ' <' . $settings['from_email'] . '>',
+        ];
+
+        // Logo
+        $logo_url = $settings['logo_url'] ?? '';
+        if ( empty( $logo_url ) ) {
+            $logo_id = get_theme_mod( 'custom_logo' );
+            if ( $logo_id ) {
+                $logo_url = wp_get_attachment_image_url( $logo_id, 'medium' );
+            }
+        }
+        $logo_html = $logo_url
+            ? '<img src="' . esc_url( $logo_url ) . '" alt="' . esc_attr( get_bloginfo( 'name' ) ) . '" style="max-height:50px;margin-bottom:16px;">'
+            : '';
+
+        // Footer
+        $footer = '<p style="margin:0;font-size:12px;color:#888;">' . esc_html( get_bloginfo( 'name' ) );
+        if ( ! empty( $settings['store_address'] ) ) {
+            $footer .= '<br>' . esc_html( $settings['store_address'] );
+        }
+        $footer .= '</p>';
+
+        if ( $action === 'approve' ) {
+            $subject = 'Your Pickup Change Has Been Approved — Order #' . $order_num;
+            $heading = 'Pickup Change Approved';
+            $intro   = 'Great news, <strong>' . esc_html( $first ) . '</strong>! Your pickup change request for Order #' . esc_html( $order_num ) . ' has been approved.';
+            $details = '
+                <tr><td colspan="2" style="padding:8px 16px;background:#f0f0f0;font-weight:700;font-size:12px;color:#555;text-transform:uppercase;letter-spacing:.04em;">Previous Pickup</td></tr>
+                <tr><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;font-weight:600;color:#555;font-size:14px;width:120px;">Location</td><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;color:#333;font-size:14px;">' . esc_html( $old_details['location_name'] ) . '</td></tr>
+                <tr><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;font-weight:600;color:#555;font-size:14px;">Date</td><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;color:#333;font-size:14px;">' . esc_html( $old_details['date_display'] ) . '</td></tr>
+                <tr><td style="padding:10px 16px;border-bottom:2px solid #ddd;font-weight:600;color:#555;font-size:14px;">Time</td><td style="padding:10px 16px;border-bottom:2px solid #ddd;color:#333;font-size:14px;">' . esc_html( $old_details['time_display'] ) . '</td></tr>
+                <tr><td colspan="2" style="padding:8px 16px;background:#1a1a2e;color:#fff;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;">New Pickup</td></tr>
+                <tr><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;font-weight:600;color:#555;font-size:14px;">Location</td><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;color:#333;font-size:14px;">' . esc_html( $new_details['location_name'] ) . '</td></tr>
+                <tr><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;font-weight:600;color:#555;font-size:14px;">Date</td><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;color:#333;font-size:14px;">' . esc_html( $new_details['date_display'] ) . '</td></tr>
+                <tr><td style="padding:10px 16px;font-weight:600;color:#555;font-size:14px;">Time</td><td style="padding:10px 16px;color:#333;font-size:14px;">' . esc_html( $new_details['time_display'] ) . '</td></tr>';
+            $closing = 'Please bring your order confirmation when picking up your items. We look forward to seeing you!';
+        } else {
+            $subject = 'Update on Your Pickup Change Request — Order #' . $order_num;
+            $heading = 'Pickup Change Request Update';
+            $intro   = 'Hi <strong>' . esc_html( $first ) . '</strong>, thank you for your request regarding Order #' . esc_html( $order_num ) . '. Unfortunately, we were unable to accommodate the change at this time.';
+            $details = '
+                <tr><td colspan="2" style="padding:8px 16px;background:#f0f0f0;font-weight:700;font-size:12px;color:#555;text-transform:uppercase;letter-spacing:.04em;">Your Current Pickup</td></tr>
+                <tr><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;font-weight:600;color:#555;font-size:14px;width:120px;">Location</td><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;color:#333;font-size:14px;">' . esc_html( $old_details['location_name'] ) . '</td></tr>
+                <tr><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;font-weight:600;color:#555;font-size:14px;">Date</td><td style="padding:10px 16px;border-bottom:1px solid #f5f5f5;color:#333;font-size:14px;">' . esc_html( $old_details['date_display'] ) . '</td></tr>
+                <tr><td style="padding:10px 16px;font-weight:600;color:#555;font-size:14px;">Time</td><td style="padding:10px 16px;color:#333;font-size:14px;">' . esc_html( $old_details['time_display'] ) . '</td></tr>';
+            $closing = 'Your original pickup details remain unchanged. If you have any questions, please don\'t hesitate to contact us.';
+        }
+
+        $html = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>' . esc_html( $heading ) . '</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f0f0;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f0f0;padding:32px 0;">
+<tr><td align="center" style="padding:0 12px;">
+<table width="640" cellpadding="0" cellspacing="0" border="0" style="max-width:640px;width:100%;">
+<tr><td style="background:#1a1a2e;border-radius:8px 8px 0 0;padding:28px 36px;text-align:center;">'
+    . $logo_html
+    . '<h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">' . esc_html( $heading ) . '</h1>
+</td></tr>
+<tr><td style="background:#fff;padding:28px 36px;">
+<p style="font-size:15px;color:#333;">' . $intro . '</p>
+<table cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:20px 0 24px;border:1px solid #e5e5e5;border-radius:6px;overflow:hidden;">'
+    . $details
+    . '</table>
+<p style="font-size:14px;color:#555;">' . esc_html( $closing ) . '</p>
+</td></tr>
+<tr><td style="background:#f8f8f8;border:1px solid #e5e5e5;border-top:none;border-radius:0 0 8px 8px;padding:24px 36px;text-align:center;">
+<p style="margin:0 0 8px;font-size:13px;color:#555;">Questions? <a href="mailto:' . esc_attr( $settings['from_email'] ) . '" style="color:#1a1a2e;font-weight:bold;">' . esc_html( $settings['from_email'] ) . '</a></p>'
+    . $footer
+    . '</td></tr>
+</table></td></tr></table>
+</body></html>';
+
+        wp_mail( $email_to, $subject, $html, $headers );
     }
 }

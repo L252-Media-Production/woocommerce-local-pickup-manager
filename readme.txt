@@ -4,7 +4,7 @@ Tags: woocommerce, local pickup, scheduling, shipping, time slots
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,17 @@ The plugin registers its own shipping method for use in shipping zones and autom
 
 == Changelog ==
 
+= 1.1.3 =
+* Enhancement: Change requests in WooCommerce → Change Requests can now be approved or denied — approval supports inline editing of pickup location, date, and time
+* Enhancement: Customers receive an email notification when their change request is approved (includes previous and updated pickup details) or denied
+* Enhancement: Customer order page now reflects the outcome of their change request (approved, denied, or still pending)
+* Fix: Change requests submitted by customers now reliably appear in the admin panel even when no booking row existed for the order
+* Fix: Order links on the Change Requests page now work correctly with WooCommerce High-Performance Order Storage (HPOS)
+
+= 1.1.2 =
+* Enhancement: Organization affiliation dropdown at checkout now uses Select2 for searchable typeahead filtering
+* Fix: Database schema migrations are now applied automatically on plugin update — new columns are added without requiring plugin reactivation
+
 = 1.1.1 =
 * Security: CRM API key is now masked in the admin settings page — only the last 4 characters are visible after saving
 
@@ -104,6 +115,12 @@ The plugin registers its own shipping method for use in shipping zones and autom
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.1.3 =
+Change request workflow overhauled — admins can now approve or deny requests with inline pickup editing and automatic customer email notification.
+
+= 1.1.2 =
+Organization affiliation dropdown now supports searchable filtering. Database schema migrations are applied automatically on update.
 
 = 1.1.1 =
 Security patch: the CRM API key is now masked in admin settings.

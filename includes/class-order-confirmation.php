@@ -622,7 +622,14 @@ class WCLPM_Change_Requests {
         ) );
 
         if ( $booking && intval( $booking->change_requested ) >= 1 ) {
-            echo '<p style="margin-top:30px;color:#888;font-size:13px;">✅ Your change request has been received. We\'ll be in touch to confirm.</p>';
+            $cr_status = intval( $booking->change_requested );
+            if ( $cr_status === 2 ) {
+                echo '<p style="margin-top:30px;color:#2e7d32;font-size:13px;">✅ Your pickup change has been approved. Check your email for the updated details.</p>';
+            } elseif ( $cr_status === 3 ) {
+                echo '<p style="margin-top:30px;color:#888;font-size:13px;">We were unable to accommodate your pickup change request. Your original pickup details remain unchanged. Please contact us if you have questions.</p>';
+            } else {
+                echo '<p style="margin-top:30px;color:#888;font-size:13px;">✅ Your change request has been received. We\'ll be in touch to confirm.</p>';
+            }
             return;
         }
 

@@ -193,7 +193,7 @@ Both use a transient lock to prevent duplicate sends on concurrent runs.
 
 | Constant | Value |
 |---|---|
-| `WCLPM_VERSION` | `1.1.1` |
+| `WCLPM_VERSION` | `1.1.3` |
 | `WCLPM_PLUGIN_FILE` | Absolute path to main plugin file |
 | `WCLPM_PATH` | Plugin directory path (trailing slash) |
 | `WCLPM_URL` | Plugin directory URL (trailing slash) |
